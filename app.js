@@ -1,4 +1,16 @@
 const client = window.supabaseClient;
+// ===== FIX: ajusta a altura real da toolbar para o sticky do cabeçalho =====
+function updateToolbarHeightVar(){
+  try{
+    const tb = document.querySelector("#panel .toolbar");
+    if(!tb) return;
+    const h = Math.ceil(tb.getBoundingClientRect().height);
+    document.documentElement.style.setProperty("--toolbar-h", h + "px");
+  }catch(e){}
+}
+window.addEventListener("resize", ()=>{ updateToolbarHeightVar(); });
+
+// chame após renderizar a toolbar/tabela
 
 const TABS = [
   {
