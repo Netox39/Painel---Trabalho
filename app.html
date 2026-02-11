@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Trabalho</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Centraliza a logo no quadrado (sem depender do styles.css) */
+    .brand { display:flex; align-items:center; gap:12px; }
+    .logoBox{
+      width:56px; height:56px;
+      border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .logoBox img{ width:100%; height:100%; object-fit:contain; display:block; }
+    .brand small{ opacity:.85; }
+    .topRight{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  </style>
+</head>
+
+<body>
+  <div class="appShell">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <!-- IMPORTANTE: coloque sua imagem como logo.png na mesma pasta do app.html -->
+        <div class="logoBox">
+          <img src="./logo.png" alt="Faculdade Christus Eusébio" />
+        </div>
+        <div>
+          <div class="appTitle"><b>Painel de Trabalho</b></div>
+          <small>Faculdade Christus Eusébio</small>
+        </div>
+      </div>
+
+      <div class="topRight">
+        <div class="clock" id="clock">—</div>
+        <button class="btn ghost" id="userBtn">—</button>
+        <button class="btn danger" id="logoutBtn">Sair</button>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="layout">
+      <div class="sidebar">
+        <div class="nav" id="nav"></div>
+      </div>
+
+      <div class="content">
+        <div class="contentHead">
+          <div>
+            <h2 id="title" style="margin:0">—</h2>
+            <div class="note" id="subtitle" style="margin-top:6px">—</div>
+          </div>
+
+          <div class="actions">
+            <div class="zoom">
+              <button class="btn" id="zoomOut">−</button>
+              <button class="btn" id="zoomReset">100%</button>
+              <button class="btn" id="zoomIn">+</button>
+            </div>
+            <button class="btn ok" id="addBtn">+ Adicionar</button>
+          </div>
+        </div>
+
+        <div id="panel"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal -->
+  <div class="modalBackdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle" id="modalTitle">—</div>
+        <button class="btn" id="modalClose">Fechar</button>
+      </div>
+      <div class="modalBody" id="modalBody"></div>
+      <div class="modalFooter" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+  <script>
+    // relógio
+    const clockEl = document.getElementById("clock");
+    setInterval(()=>{ if(clockEl) clockEl.textContent = new Date().toLocaleString("pt-BR"); }, 1000);
+  </script>
+</body>
+</html>
