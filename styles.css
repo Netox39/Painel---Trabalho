@@ -193,4 +193,31 @@ th{
   font-size: 14px;
   opacity: 0.8;
 }
+/* ===== Header mais institucional ===== */
+.header{
+  background: linear-gradient(180deg, rgba(6,20,50,.95), rgba(6,20,50,.70));
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 14px 18px;
+}
+
+/* Marca (logo + textos) */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+/* Quadrado branco da logo */
+.logoBox{
+  width:64px;
+  height:64px;
+  background:#fff;
+  border-radius:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 10px 28px rgba(0,0,0,.25);
+ 
+::contentReference[oaicite:0]{index=0}
+
 
