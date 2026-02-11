@@ -146,7 +146,7 @@ tr:hover td{background:rgba(255,255,255,.04)}
 
 th{
   position: sticky;
-  top: calc(var(--toolbar-h) - 12px);
+  top: calc(var(--toolbar-h) - 16px);
   z-index: 9;
   background: rgba(79,140,255,.14);
   backdrop-filter: blur(6px);
