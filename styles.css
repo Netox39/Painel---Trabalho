@@ -220,4 +220,89 @@ th{
  
 ::contentReference[oaicite:0]{index=0}
 
+  /* ===== TEMA INSTITUCIONAL FACULDADE ===== */
+
+/* Header mais elegante */
+.header{
+  background: linear-gradient(135deg, #0a1f44 0%, #102a63 60%, #163c8a 100%);
+  box-shadow: 0 6px 24px rgba(0,0,0,.35);
+}
+
+/* Logo institucional */
+.logoBox{
+  width:64px;
+  height:64px;
+  background:#ffffff;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  padding:8px;
+}
+
+.logoBox img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+/* Texto institucional */
+.brandText .appTitle{
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.3px;
+}
+
+.brandText .appSub{
+  font-size:13px;
+  opacity:.85;
+}
+
+/* Sidebar mais institucional */
+.sidebar{
+  background: linear-gradient(180deg, #0d1f3c 0%, #0a162c 100%);
+  border-right:1px solid rgba(255,255,255,.06);
+}
+
+/* Botões da lateral */
+.nav button{
+  background: rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  font-weight:600;
+}
+
+.nav button.active{
+  background: linear-gradient(90deg, rgba(79,140,255,.25), rgba(79,140,255,.15));
+  border-color: rgba(79,140,255,.45);
+}
+
+/* Área principal mais clara para contraste */
+.panel{
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+}
+
+/* Tabela mais institucional */
+table{
+  background: rgba(255,255,255,.04);
+  border-radius:18px;
+}
+
+th{
+  background: linear-gradient(90deg, rgba(79,140,255,.25), rgba(79,140,255,.15));
+  font-size:13px;
+}
+
+/* Chips de status mais elegantes */
+.status-chip{
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+}
+
+.status-aberto{background:#1f6feb33;color:#7db3ff}
+.status-andamento{background:#facc1533;color:#ffd666}
+.status-concluido{background:#22c55e33;color:#8cffb5}
+.status-pendente{background:#ef444433;color:#ff9a9a}
 
