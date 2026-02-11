@@ -1,30 +1,38 @@
-PAINEL (SEM GOOGLE SHEETS) — SUPABASE FREE
+# Painel (sem Google Sheets) — Supabase (Free)
 
-ARQUIVOS IMPORTANTES:
-- index.html  -> login
-- app.html    -> painel
-- config.js   -> suas chaves (você cria a partir do config.example.js)
-- supabase.sql-> cria as tabelas + segurança
-- app.js      -> telas/abas (campos podem ser alterados aqui)
+Projeto simples de **painel web** com **login** e **abas** para organizar e gerenciar informações.  
+Fiz este projeto para praticar **lógica de programação**, estruturação de dados e integração com **banco de dados** usando o plano free do Supabase.
 
-PASSO A PASSO:
-1) Crie um projeto no Supabase (plano free).
-2) No Supabase: SQL Editor -> rode supabase.sql.
-3) Authentication -> Providers -> Email (habilitado).
-   (Opcional) desative "Confirm email" para login imediato.
-4) Usuários:
-   - Se ALLOW_SIGNUP=true, cada pessoa cria conta pelo site.
-   - Se ALLOW_SIGNUP=false, você cria os usuários no painel (Authentication -> Users).
+## Estrutura do projeto
 
-5) Config:
-   - Copie config.example.js -> config.js
-   - Cole SUPABASE_URL e SUPABASE_ANON_KEY (Settings -> API)
+- `index.html` → tela de login  
+- `app.html` → painel (telas/abas)  
+- `config.js` → chaves do Supabase (criar a partir do `config.example.js`)  
+- `supabase.sql` → criação das tabelas + regras de segurança  
+- `app.js` → lógica das telas/abas (campos podem ser ajustados aqui)
 
-6) Deploy GitHub Pages:
-   - Suba TODOS os arquivos para o repositório
-   - Settings -> Pages -> Branch main / root
-   - Acesse o link do site
+## Como rodar (passo a passo)
 
-USO:
+1. Crie um projeto no **Supabase** (plano free).
+2. No Supabase, vá em **SQL Editor** e execute o arquivo `supabase.sql`.
+3. Em **Authentication → Providers**, deixe **Email** habilitado.  
+   - (Opcional) desative **Confirm email** para login imediato.
+4. Usuários:
+   - Se `ALLOW_SIGNUP=true`, cada pessoa cria a conta pelo site.
+   - Se `ALLOW_SIGNUP=false`, eu crio os usuários manualmente em **Authentication → Users**.
+5. Configuração:
+   - Copie `config.example.js` → `config.js`
+   - Cole `SUPABASE_URL` e `SUPABASE_ANON_KEY` (em **Settings → API**)
+6. Deploy no GitHub Pages:
+   - Suba **todos os arquivos** para o repositório
+   - Vá em **Settings → Pages** → selecione **Branch: main** / **root**
+   - Acesse o link gerado
+
+## Funcionalidades
+
 - Login com e-mail e senha
-- Cada aba: pesquisar, filtrar por coluna, adicionar, clicar para editar/excluir, exportar CSV
+- Abas com:
+  - pesquisa e filtros por coluna
+  - adicionar registros
+  - editar/excluir com clique
+  - exportação para CSV
