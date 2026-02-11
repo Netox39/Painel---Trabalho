@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Painel de Trabalho — Faculdade Christus</title>
+<style>
+:root{
+  --bg:#0b1220;
+  --text:#eaf0ff;
+  --muted:#93a4c7;
+  --border:rgba(255,255,255,.10);
+  --headerH:72px;
+  --btn:#4f8cff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(79,140,255,.22), transparent 60%),
+              radial-gradient(900px 500px at 90% 10%, rgba(34,197,94,.16), transparent 55%),
+              var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+}
+header{
+  height:var(--headerH);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15,27,51,.92), rgba(15,27,51,.70));
+  backdrop-filter: blur(10px);
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:260px}
+.brand img{
+  width:46px;height:46px;border-radius:12px;object-fit:cover;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);
+}
+.brand small{display:block;color:var(--muted);margin-top:2px}
+.clock{color:var(--muted);font-size:12px}
+
+.app{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - var(--headerH))}
+aside{border-right:1px solid var(--border);padding:12px;overflow:auto;
+  background: linear-gradient(180deg, rgba(15,27,51,.72), rgba(15,27,51,.45));
+}
+.nav button{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;
+  width:100%;margin-bottom:8px;padding:10px 10px;
+  border:1px solid var(--border);background:rgba(255,255,255,.04);
+  border-radius:12px;cursor:pointer;color:var(--text);transition:.12s ease;
+}
+.nav button:hover{transform: translateY(-1px); border-color: rgba(79,140,255,.35)}
+.nav button.active{background:rgba(79,140,255,.18);border-color:rgba(79,140,255,.45)}
+.badge{font-size:11px;color:var(--muted);padding:2px 8px;border:1px solid var(--border);
+  border-radius:999px;background:rgba(0,0,0,.12)
+}
+
+main{padding:12px;overflow:hidden}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+#title{font-weight:900;font-size:16px}
+.hint{color:var(--muted);font-size:12px;margin-top:4px;max-width:820px}
+
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.controls button{
+  padding:10px 12px;border:none;border-radius:10px;background:rgba(255,255,255,.10);
+  color:var(--text);cursor:pointer;font-weight:800;
+}
+.controls button:hover{background:rgba(79,140,255,.22)}
+#openBtn{background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.35)}
+#openBtn:hover{background:rgba(34,197,94,.26)}
+#zoomReset{min-width:74px;font-weight:800}
+
+.content{
+  height: calc(100vh - var(--headerH) - 78px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:auto;
+  background: rgba(0,0,0,.10);
+  position:relative;
+}
+.zoomWrap{ transform-origin: 0 0; }
+
+/* Table UI */
+.toolbar{
+  position: sticky; top:0; z-index:3;
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  padding:10px;
+  background: rgba(15,27,51,.95);
+  border-bottom:1px solid var(--border);
+}
+.toolbar input, .toolbar select{
+  padding:9px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  outline: none;
+}
+.toolbar input::placeholder{color: rgba(234,240,255,.55)}
+.toolbar .mini{ font-size:12px; color: var(--muted); margin-left:auto; }
+.toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.toolbar button{
+  padding:10px 12px;border:none;border-radius:10px;
+  background:rgba(255,255,255,.10); color:var(--text); cursor:pointer; font-weight:800;
+}
+.toolbar button:hover{background:rgba(79,140,255,.22)}
+.toolbar button.primary{background:rgba(79,140,255,.22)}
+.toolbar button.green{background:rgba(34,197,94,.18); border:1px solid rgba(34,197,94,.35)}
+.toolbar button.green:hover{background:rgba(34,197,94,.26)}
+.toolbar button.ghost{background:rgba(255,255,255,.06)}
+
+.pager{
+  position: sticky; top:52px; z-index:2;
+  display:flex; gap:8px; align-items:center;
+  padding:10px;
+  background: rgba(15,27,51,.95);
+  border-bottom:1px solid var(--border);
+}
+.pager .spacer{flex:1}
+.pager button{
+  padding:8px 10px;border:none;border-radius:10px;
+  background:rgba(255,255,255,.10); color:var(--text); cursor:pointer; font-weight:800;
+}
+.pager button:hover{background:rgba(79,140,255,.22)}
+.pager select{
+  padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06); color: var(--text);
+}
+
+.tableWrap{padding:10px}
+table{
+  width:max-content;
+  border-collapse:separate;
+  border-spacing:0;
+  background: rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;
+  overflow:hidden;
+}
+th, td{
+  border-bottom:1px solid rgba(255,255,255,.08);
+  border-right:1px solid rgba(255,255,255,.08);
+  padding:8px 10px;
+  font-size:13px;
+  white-space:nowrap;
+}
+th{
+  position: sticky;
+  top:108px;
+  background: rgba(79,140,255,.12);
+  z-index:2;
+  font-weight:900;
+}
+tr:hover td{ background: rgba(255,255,255,.04); }
+
+/* fallback iframe */
+.iframeBox{ width: 1600px; height: 1100px; }
+.iframeBox iframe{ width:100%; height:100%; border:0; background:white; display:block; }
+.fallbackNote{
+  padding:10px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+@media (max-width: 980px){
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:none;border-bottom:1px solid var(--border)}
+  .content{height:70vh}
+  .iframeBox{width:1200px;height:900px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Logo">
+    <div>
+      <div><b>Painel de Trabalho</b></div>
+      <small>Faculdade Christus</small>
+    </div>
+  </div>
+  <div class="clock" id="clock">—</div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="nav" id="nav"></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div id="title">—</div>
+        <div class="hint" id="hint">Filtros (pesquisa, coluna, valor), paginação e exportação disponíveis em todas as abas.</div>
+      </div>
+
+      <div class="controls">
+        <button id="zoomOut" title="Diminuir zoom">−</button>
+        <button id="zoomReset" title="Resetar zoom">100%</button>
+        <button id="zoomIn" title="Aumentar zoom">+</button>
+        <button id="openBtn" title="Abrir no Google Sheets">Abrir no Sheets</button>
+      </div>
+    </div>
+
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<script>
+/* =====================
+   CONFIG (inclui fallback pubhtml)
+===================== */
+const tabs = [
+  {
+    name:"Controle de Inventário",
+    tag:"Filtro",
+    type:"table",
+    csvUrl:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTuk8e_LjYUhZjKL1irUu61to09DTsk7fXnmbN_ZgJ8FSW-qFw1Bi5VznDXC7tRGyhMvgTg5QlAADE9/pub?gid=1099818557&single=true&output=csv",
+    pubhtml:"https://docs.google.com/spreadsheets/d/e/2PACX-1vTuk8e_LjYUhZjKL1irUu61to09DTsk7fXnmbN_ZgJ8FSW-qFw1Bi5VznDXC7tRGyhMvgTg5QlAADE9/pubhtml",
+    viewUrl:"https://docs.google.com/spreadsheets/d/1QVhGPsB8g9BsU5gIoPFNBslsg18zsqLz96yqlwRXdHs/view?usp=sharing"
+  },
+  {
+    name:"Controle de Envios e Retornos",
+    tag:"Filtro",
+    type:"table",
+    // Alguns publishes não aceitam gid; então tentamos com gid e, se falhar, tentamos sem.
+    csvUrl:"https://docs.google.com/spreadsheets/d/e/2PACX-1vR8oJdwz52RcOHzwlutBJ-oznwbO2psOOkFnVb2JLY5Rpzd9zac6JZQ30YBladU5lvt2FiTUALCv57R/pub?gid=2092291561&single=true&output=csv",
+    csvUrlFallback:"https://docs.google.com/spreadsheets/d/e/2PACX-1vR8oJdwz52RcOHzwlutBJ-oznwbO2psOOkFnVb2JLY5Rpzd9zac6JZQ30YBladU5lvt2FiTUALCv57R/pub?single=true&output=csv",
+    pubhtml:"https://docs.google.com/spreadsheets/d/e/2PACX-1vR8oJdwz52RcOHzwlutBJ-oznwbO2psOOkFnVb2JLY5Rpzd9zac6JZQ30YBladU5lvt2FiTUALCv57R/pubhtml",
+    viewUrl:"https://docs.google.com/spreadsheets/d/1NDNQXnTDX-uKC80Q-TIEn2Y1R4ZoFhjsyc3uaFNwaTI/view?usp=sharing"
+  },
+  {
+    name:"Mapeamento Ar Condicionado",
+    tag:"Filtro",
+    type:"table",
+    csvUrl:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSWcrg5z_S3YUhEqDrshtpKO9uejmEv2KhI70RfdeGuPxhm_UuAx7yl5y8Jpe5BMA/pub?gid=353718000&single=true&output=csv",
+    csvUrlFallback:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSWcrg5z_S3YUhEqDrshtpKO9uejmEv2KhI70RfdeGuPxhm_UuAx7yl5y8Jpe5BMA/pub?single=true&output=csv",
+    pubhtml:"https://docs.google.com/spreadsheets/d/e/2PACX-1vSWcrg5z_S3YUhEqDrshtpKO9uejmEv2KhI70RfdeGuPxhm_UuAx7yl5y8Jpe5BMA/pubhtml",
+    viewUrl:"https://docs.google.com/spreadsheets/d/1yNSd8jrSxJGdU2xDaKMhwdkgpE0BThIX/view?usp=sharing"
+  },
+  {
+    name:"Agenda Lab de Informática",
+    tag:"Filtro",
+    type:"table",
+    csvUrl:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS4gESNTCskkqwJDwDEdszFOOWBsPRbNZj1pzr0KfvOyfxVCMfBq9yRZ9N6OQRmkrWjNCRSNHv0t88-/pub?gid=2034627358&single=true&output=csv",
+    csvUrlFallback:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS4gESNTCskkqwJDwDEdszFOOWBsPRbNZj1pzr0KfvOyfxVCMfBq9yRZ9N6OQRmkrWjNCRSNHv0t88-/pub?single=true&output=csv",
+    pubhtml:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS4gESNTCskkqwJDwDEdszFOOWBsPRbNZj1pzr0KfvOyfxVCMfBq9yRZ9N6OQRmkrWjNCRSNHv0t88-/pubhtml",
+    viewUrl:"https://docs.google.com/spreadsheets/d/1_vR44u298xUtvNu9ifStkcZodM1m3SWUDDJb_naNDx4/view?usp=sharing"
+  },
+  {
+    name:"Ramais Internos",
+    tag:"Filtro",
+    type:"table",
+    csvUrl:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS-wJl57NMoEHSiVWPKm4R32h9cQbavN7GLWoXWoZS37zZcvUpoJl9P2_cTx7VXTVzcPk9nNmQdpmhV/pub?gid=0&single=true&output=csv",
+    csvUrlFallback:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS-wJl57NMoEHSiVWPKm4R32h9cQbavN7GLWoXWoZS37zZcvUpoJl9P2_cTx7VXTVzcPk9nNmQdpmhV/pub?single=true&output=csv",
+    pubhtml:"https://docs.google.com/spreadsheets/d/e/2PACX-1vS-wJl57NMoEHSiVWPKm4R32h9cQbavN7GLWoXWoZS37zZcvUpoJl9P2_cTx7VXTVzcPk9nNmQdpmhV/pubhtml",
+    viewUrl:"https://docs.google.com/spreadsheets/d/11CwMnpzrB5zb8oY01Rx2Iddj9a5ZueF9Idxl80Tvpmg/view?usp=sharing"
+  }
+];
+
+/* =====================
+   HELPERS
+===================== */
+function parseCSV(text){
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(c === '"'){
+      if(inQuotes && text[i+1] === '"'){ cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if(c === ',' && !inQuotes){
+      row.push(cur); cur = "";
+    } else if((c === '\n' || c === '\r') && !inQuotes){
+      if(c === '\r' && text[i+1] === '\n') i++;
+      row.push(cur);
+      if(row.some(v => (v ?? "").toString().trim() !== "")) rows.push(row);
+      row = []; cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  row.push(cur);
+  if(row.some(v => (v ?? "").toString().trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function norm(s){
+  return (s ?? "").toString().trim().toUpperCase()
+    .normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function csvEscape(v){
+  const s = (v ?? "").toString();
+  if(/[",\n\r]/.test(s)) return '"' + s.replaceAll('"','""') + '"';
+  return s;
+}
+
+/* Header detection: escolhe melhor linha e remove cabeçalho duplicado no meio */
+function scoreHeaderRow(r){
+  const cells = r.map(x => (x ?? "").toString().trim());
+  const nonEmpty = cells.filter(x => x !== "").length;
+  const alpha = cells.filter(x => /[A-Za-zÀ-ÿ]/.test(x)).length;
+  const numeric = cells.filter(x => x !== "" && /^[0-9 .,:/-]+$/.test(x)).length;
+  const unique = new Set(cells.map(c=>norm(c)).filter(c=>c!=="")).size;
+  // penaliza linhas tipo "título" com 1-2 células e linhas muito numéricas
+  return nonEmpty + alpha*2 + unique*0.7 - numeric*1.2;
+}
+
+function findHeaderRow(rows){
+  const maxCheck = Math.min(rows.length, 60);
+  let bestI = 0, bestScore = -1e9;
+
+  for(let i=0;i<maxCheck;i++){
+    const r = rows[i];
+    const s = scoreHeaderRow(r);
+    if(s > bestScore){
+      bestScore = s;
+      bestI = i;
+    }
+  }
+  return bestI;
+}
+
+function isDuplicateHeaderRow(row, headerNorm){
+  // considera duplicado se muitas colunas batem com o header
+  const rn = row.map(norm);
+  let matches = 0;
+  const L = Math.min(rn.length, headerNorm.length);
+  for(let i=0;i<L;i++){
+    if(rn[i] && headerNorm[i] && rn[i] === headerNorm[i]) matches++;
+  }
+  return matches >= Math.max(3, Math.floor(L*0.6));
+}
+
+/* =====================
+   UI + STATE
+===================== */
+const nav = document.getElementById("nav");
+const content = document.getElementById("content");
+const titleEl = document.getElementById("title");
+
+let current = null;
+let zoom = 1;
+
+function applyZoom(){
+  const wrap = document.getElementById("zoomWrap");
+  if(!wrap) return;
+  wrap.style.transform = `scale(${zoom})`;
+  document.getElementById("zoomReset").textContent = Math.round(zoom*100) + "%";
+}
+document.getElementById("zoomIn").onclick  = () => { zoom = Math.min(1.6, +(zoom + 0.1).toFixed(2)); applyZoom(); };
+document.getElementById("zoomOut").onclick = () => { zoom = Math.max(0.6, +(zoom - 0.1).toFixed(2)); applyZoom(); };
+document.getElementById("zoomReset").onclick = () => { zoom = 1; applyZoom(); };
+
+document.getElementById("openBtn").onclick = () => {
+  if(current?.viewUrl) window.open(current.viewUrl, "_blank", "noopener");
+};
+
+tabs.forEach((t,i)=>{
+  const b = document.createElement("button");
+  b.innerHTML = `<span>${t.name}</span><span class="badge">${t.tag}</span>`;
+  b.onclick = () => render(i);
+  nav.appendChild(b);
+});
+
+/* =====================
+   TABLE RENDER
+===================== */
+function renderFallbackIframe(tab, reason){
+  const safeReason = reason ? `<div class="fallbackNote">${reason}</div>` : "";
+  content.innerHTML = `
+    <div id="zoomWrap" class="zoomWrap">
+      ${safeReason}
+      <div class="iframeBox">
+        <iframe src="${tab.pubhtml}?widget=true&headers=false" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </div>
+  `;
+  applyZoom();
+}
+
+async function fetchCsvWithFallback(tab){
+  const tryUrls = [tab.csvUrl, tab.csvUrlFallback].filter(Boolean);
+  let lastErr = null;
+
+  for(const url of tryUrls){
+    try{
+      const res = await fetch(url, {cache:"no-store"});
+      const txt = await res.text();
+      // Heurística: se retornar HTML (erro), não é CSV válido
+      if(/<html|<head|<body/i.test(txt)) throw new Error("Resposta não é CSV (HTML).");
+      const rows = parseCSV(txt);
+      if(rows.length < 2) throw new Error("CSV vazio.");
+      return rows;
+    }catch(e){
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("Falha ao carregar CSV.");
+}
+
+async function renderTable(tab){
+  content.innerHTML = `
+    <div id="zoomWrap" class="zoomWrap">
+      <div class="toolbar">
+        <div class="group">
+          <input id="q" placeholder="Pesquisar (todas as colunas)..." />
+          <select id="col"><option value="">Coluna (todas)</option></select>
+          <input id="val" placeholder="Valor (contém)..." />
+          <button class="primary" id="apply">Filtrar</button>
+          <button class="ghost" id="clear">Limpar</button>
+          <button class="green" id="export">Exportar CSV</button>
+        </div>
+        <span class="mini" id="meta">Carregando…</span>
+      </div>
+
+      <div class="pager">
+        <span style="color:var(--muted);font-size:12px" id="pageInfo">—</span>
+        <div class="spacer"></div>
+        <button id="prev">◀</button>
+        <button id="next">▶</button>
+        <select id="pageSize">
+          <option value="25">25/pg</option>
+          <option value="50" selected>50/pg</option>
+          <option value="100">100/pg</option>
+          <option value="200">200/pg</option>
+        </select>
+      </div>
+
+      <div class="tableWrap">
+        <div id="tableHost"></div>
+      </div>
+    </div>
+  `;
+
+  applyZoom();
+
+  let rows;
+  try{
+    rows = await fetchCsvWithFallback(tab);
+  }catch(e){
+    // se falhar, mostra embed para não ficar "sumindo"
+    renderFallbackIframe(tab, "Não consegui carregar o CSV para filtros (provavelmente não está publicado para web como CSV). Mostrando a versão embutida.");
+    return;
+  }
+
+  const headerIndex = findHeaderRow(rows);
+  const header = rows[headerIndex] || rows[0];
+  const headerNorm = header.map(norm);
+
+  // remove linhas vazias e remove cabeçalho duplicado no meio
+  let data = rows.slice(headerIndex+1).filter(r => r.some(v => (v??"").toString().trim() !== ""));
+  data = data.filter(r => !isDuplicateHeaderRow(r, headerNorm));
+
+  // preencher select de coluna
+  const colSel = document.getElementById("col");
+  header.forEach((h, idx)=>{
+    const opt = document.createElement("option");
+    opt.value = String(idx);
+    opt.textContent = (h && h.trim()) ? h.trim() : `Coluna ${idx+1}`;
+    colSel.appendChild(opt);
+  });
+
+  // state
+  let filtered = data.slice();
+  let page = 1;
+  let pageSize = parseInt(document.getElementById("pageSize").value, 10);
+
+  const meta = document.getElementById("meta");
+  const pageInfo = document.getElementById("pageInfo");
+  const host = document.getElementById("tableHost");
+
+  function buildTable(slice){
+    const t = document.createElement("table");
+    const thead = document.createElement("thead");
+    const trh = document.createElement("tr");
+    header.forEach(h=>{
+      const th = document.createElement("th");
+      th.textContent = h || "";
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    t.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    slice.forEach(r=>{
+      const tr = document.createElement("tr");
+      for(let i=0;i<header.length;i++){
+        const td = document.createElement("td");
+        td.textContent = (r[i] ?? "");
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    });
+    t.appendChild(tbody);
+
+    host.innerHTML = "";
+    host.appendChild(t);
+  }
+
+  function renderPage(){
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    page = Math.min(page, totalPages);
+
+    const start = (page-1)*pageSize;
+    const end = Math.min(total, start + pageSize);
+    const slice = filtered.slice(start, end);
+
+    meta.textContent = `${total} registro(s)`;
+    pageInfo.textContent = `Página ${page}/${totalPages} • Mostrando ${total ? (start+1) : 0}-${end}`;
+    buildTable(slice);
+  }
+
+  function applyFilters(){
+    const q = (document.getElementById("q").value || "").trim();
+    const val = (document.getElementById("val").value || "").trim();
+    const col = document.getElementById("col").value;
+
+    const qn = norm(q);
+    const vn = norm(val);
+
+    filtered = data.filter(r => {
+      if(qn){
+        const ok = r.some(cell => norm(cell).includes(qn));
+        if(!ok) return false;
+      }
+      if(vn){
+        if(col === ""){
+          const ok = r.some(cell => norm(cell).includes(vn));
+          if(!ok) return false;
+        }else{
+          const idx = parseInt(col,10);
+          if(!norm(r[idx]).includes(vn)) return false;
+        }
+      }
+      return true;
+    });
+
+    page = 1;
+    renderPage();
+  }
+
+  function exportCSV(){
+    const lines = [];
+    lines.push(header.map(csvEscape).join(","));
+    for(const r of filtered){
+      const row = [];
+      for(let i=0;i<header.length;i++) row.push(csvEscape(r[i] ?? ""));
+      lines.push(row.join(","));
+    }
+    const blob = new Blob([lines.join("\n")], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tab.name.replace(/[^a-z0-9]+/gi,"_").toLowerCase()}_filtrado.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // hooks
+  document.getElementById("apply").onclick = applyFilters;
+  document.getElementById("clear").onclick = () => {
+    document.getElementById("q").value = "";
+    document.getElementById("val").value = "";
+    document.getElementById("col").value = "";
+    filtered = data.slice();
+    page = 1;
+    renderPage();
+  };
+  document.getElementById("export").onclick = exportCSV;
+
+  document.getElementById("prev").onclick = () => { page = Math.max(1, page-1); renderPage(); };
+  document.getElementById("next").onclick = () => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    page = Math.min(totalPages, page+1);
+    renderPage();
+  };
+  document.getElementById("pageSize").onchange = (e) => {
+    pageSize = parseInt(e.target.value, 10);
+    page = 1;
+    renderPage();
+  };
+  document.getElementById("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyFilters(); });
+  document.getElementById("val").addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyFilters(); });
+
+  renderPage();
+}
+
+async function render(i){
+  current = tabs[i];
+  titleEl.textContent = current.name;
+
+  document.querySelectorAll(".nav button").forEach((b, idx) => b.classList.toggle("active", idx===i));
+
+  await renderTable(current);
+}
+
+// start
+render(0);
+setInterval(()=>{
+  document.getElementById("clock").innerText = new Date().toLocaleString("pt-BR");
+}, 1000);
+</script>
+
+</body>
+</html>
