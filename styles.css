@@ -142,3 +142,28 @@ tr:hover td{background:rgba(255,255,255,.04)}
   display:none;
 }
 .toast.show{display:block}
+/* ===== FIX: Cabeçalho da tabela sempre fixo no topo (sem sobrepor) ===== */
+/* A toolbar é sticky no topo do painel. Guardamos a altura dela em --toolbar-h (definida via JS). */
+:root{
+  --toolbar-h: 56px; /* fallback */
+}
+
+/* garante toolbar acima */
+.toolbar{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* cabeçalho da tabela cola logo abaixo da toolbar */
+th{
+  position: sticky;
+  top: var(--toolbar-h);
+  z-index: 9;
+}
+
+/* opcional: dá um pouco mais de contraste no cabeçalho */
+th{
+  background: rgba(79,140,255,.14);
+  backdrop-filter: blur(6px);
+}
