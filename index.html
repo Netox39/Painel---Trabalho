@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Trabalho — Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container" style="padding-top:28px">
+    <div class="card" style="max-width:520px;margin:0 auto">
+      <div class="header" style="position:static">
+        <div class="brand">
+          <img src="logo.png" alt="Logo">
+          <div>
+            <div><b>Painel de Trabalho</b></div>
+            <small>Faculdade Christus</small>
+          </div>
+        </div>
+        <div class="clock" id="clock">—</div>
+      </div>
+
+      <div style="padding:16px">
+        <div class="note">
+          Entre com seu usuário e senha. Se o cadastro estiver habilitado, você pode criar sua conta.
+        </div>
+
+        <div class="grid" style="margin-top:14px">
+          <div>
+            <label class="note">E-mail</label>
+            <input class="input" id="email" type="email" placeholder="nome@exemplo.com" autocomplete="email" />
+          </div>
+          <div>
+            <label class="note">Senha</label>
+            <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:2px">
+            <button class="btn primary" id="loginBtn">Entrar</button>
+            <button class="btn" id="signupBtn" style="display:none">Criar conta</button>
+            <button class="btn" id="resetBtn">Esqueci a senha</button>
+          </div>
+
+          <div class="note" id="msg" style="margin-top:2px"></div>
+
+          <div class="note" style="margin-top:10px">
+            <b>Primeira vez configurando?</b><br/>
+            Suba o arquivo <code>config.js</code> (baseado no <code>config.example.js</code>) com as chaves do Supabase.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="site.js"></script>
+  <script>
+    setInterval(()=>clock.textContent=new Date().toLocaleString("pt-BR"), 1000);
+  </script>
+</body>
+</html>
