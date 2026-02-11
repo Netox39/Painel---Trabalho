@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Painel de Trabalho — Faculdade Christus</title>
+<style>
+:root{--bg:#0b1220;--text:#eaf0ff;--muted:#93a4c7;--border:rgba(255,255,255,.10);--headerH:72px;--btn:#4f8cff;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,system-ui;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+header{height:var(--headerH);display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;min-width:240px}
+.brand img{width:46px;height:46px;border-radius:12px;object-fit:cover;background:rgba(255,255,255,.05);border:1px solid var(--border)}
+.brand small{display:block;color:var(--muted);margin-top:2px}
+
+.app{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - var(--headerH))}
+aside{border-right:1px solid var(--border);padding:12px;overflow:auto}
+.nav button{display:flex;justify-content:space-between;gap:10px;align-items:center;width:100%;margin-bottom:8px;padding:10px 10px;border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:10px;cursor:pointer;color:var(--text)}
+.nav button.active{background:rgba(79,140,255,.18);border-color:rgba(79,140,255,.45)}
+.badge{font-size:11px;color:var(--muted);padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:rgba(0,0,0,.12)}
+
+main{padding:12px;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+#title{font-weight:800}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.controls button{padding:10px 12px;border:none;border-radius:10px;background:rgba(255,255,255,.10);color:var(--text);cursor:pointer;font-weight:800}
+.controls button:hover{background:rgba(79,140,255,.22)}
+#editBtn{background:var(--btn)}
+#editBtn:hover{background:#2f73ff}
+#openBtn{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.35)}
+#openBtn:hover{background:rgba(34,197,94,.28)}
+#zoomReset{min-width:74px;font-weight:700}
+
+.content{
+  height: calc(100vh - var(--headerH) - 70px);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:auto;
+  background:rgba(0,0,0,.10);
+}
+
+.frameWrap{transform-origin:0 0;}
+iframe{width:100%;height:100%;border:0;background:white;display:block}
+.hint{color:var(--muted);font-size:12px;margin-top:4px}
+@media (max-width: 980px){
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  aside{border-right:none;border-bottom:1px solid var(--border)}
+  .content{height:70vh}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Logo">
+    <div>
+      <b>Painel de Trabalho</b>
+      <small>Faculdade Christus</small>
+    </div>
+  </div>
+  <div id="clock" style="color:var(--muted);font-size:12px"></div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="nav" id="nav"></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div id="title">—</div>
+        <div class="hint">Dica: filtros de colunas do Google Sheets só aparecem ao abrir no próprio Sheets (botão verde).</div>
+      </div>
+      <div class="controls">
+        <button id="zoomOut" title="Diminuir zoom">−</button>
+        <button id="zoomReset" title="Resetar zoom">100%</button>
+        <button id="zoomIn" title="Aumentar zoom">+</button>
+        <button id="openBtn" title="Abrir no Google Sheets (com filtros)">Abrir no Sheets</button>
+        <button id="editBtn" title="Abrir para edição (admin)">Editar</button>
+      </div>
+    </div>
+
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<script>
+const isAdmin = new URLSearchParams(location.search).get("admin")==="1";
+
+const editBtn = document.getElementById("editBtn");
+editBtn.style.display = isAdmin ? "inline-block" : "none";
+
+const zoomInBtn = document.getElementById("zoomIn");
+const zoomOutBtn = document.getElementById("zoomOut");
+const zoomResetBtn = document.getElementById("zoomReset");
+const openBtn = document.getElementById("openBtn");
+
+const u = (b) => b + "?widget=true&headers=false";
+
+const tabs = [
+  {
+    name:"Agenda Laboratório",
+    tag:"Agenda",
+    url:u("https://docs.google.com/spreadsheets/d/e/2PACX-1vTuk8e_LjYUhZjKL1irUu61to09DTsk7fXnmbN_ZgJ8FSW-qFw1Bi5VznDXC7tRGyhMvgTg5QlAADE9/pubhtml"),
+    editUrl:"https://docs.google.com/spreadsheets/d/1QVhGPsB8g9BsU5gIoPFNBslsg18zsqLz96yqlwRXdHs/edit?gid=1099818557#gid=1099818557"
+  },
+  {
+    name:"Controle de Inventário",
+    tag:"Estoque",
+    url:u("https://docs.google.com/spreadsheets/d/e/2PACX-1vR8oJdwz52RcOHzwlutBJ-oznwbO2psOOkFnVb2JLY5Rpzd9zac6JZQ30YBladU5lvt2FiTUALCv57R/pubhtml"),
+    editUrl:"https://docs.google.com/spreadsheets/d/1NDNQXnTDX-uKC80Q-TIEn2Y1R4ZoFhjsyc3uaFNwaTI/edit?gid=2092291561#gid=2092291561"
+  },
+  {
+    name:"Mapeamento Ar Condicionado",
+    tag:"Mapa",
+    url:u("https://docs.google.com/spreadsheets/d/e/2PACX-1vSWcrg5z_S3YUhEqDrshtpKO9uejmEv2KhI70RfdeGuPxhm_UuAx7yl5y8Jpe5BMA/pubhtml"),
+    editUrl:"https://docs.google.com/spreadsheets/d/1yNSd8jrSxJGdU2xDaKMhwdkgpE0BThIX/edit?gid=353718000#gid=353718000"
+  },
+  {
+    name:"Ramais Internos",
+    tag:"Contato",
+    url:u("https://docs.google.com/spreadsheets/d/e/2PACX-1vS4gESNTCskkqwJDwDEdszFOOWBsPRbNZj1pzr0KfvOyfxVCMfBq9yRZ9N6OQRmkrWjNCRSNHv0t88-/pubhtml"),
+    editUrl:"https://docs.google.com/spreadsheets/d/1_vR44u298xUtvNu9ifStkcZodM1m3SWUDDJb_naNDx4/edit?gid=2034627358#gid=2034627358"
+  },
+  {
+    name:"Equipamentos com Defeito",
+    tag:"RMA",
+    url:u("https://docs.google.com/spreadsheets/d/e/2PACX-1vS-wJl57NMoEHSiVWPKm4R32h9cQbavN7GLWoXWoZS37zZcvUpoJl9P2_cTx7VXTVzcPk9nNmQdpmhV/pubhtml"),
+    editUrl:"https://docs.google.com/spreadsheets/d/11CwMnpzrB5zb8oY01Rx2Iddj9a5ZueF9Idxl80Tvpmg/edit?gid=0#gid=0"
+  }
+];
+
+function toViewUrl(editUrl){
+  const m = editUrl.match(/https:\/\/docs\.google\.com\/spreadsheets\/d\/([^\/]+)\//);
+  if(!m) return editUrl;
+  const id = m[1];
+  return `https://docs.google.com/spreadsheets/d/${id}/view?usp=sharing`;
+}
+
+const nav = document.getElementById("nav");
+const content = document.getElementById("content");
+const title = document.getElementById("title");
+
+let current = null;
+let zoom = 1;
+
+function applyZoom(){
+  const wrap = document.getElementById("frameWrap");
+  const frame = document.getElementById("sheetFrame");
+  if(!wrap || !frame) return;
+  wrap.style.transform = `scale(${zoom})`;
+  frame.style.width = (100/zoom) + "%";
+  frame.style.height = (100/zoom) + "%";
+  zoomResetBtn.textContent = Math.round(zoom*100) + "%";
+}
+
+function render(i){
+  current = tabs[i];
+  title.textContent = current.name;
+
+  content.innerHTML = `
+    <div id="frameWrap" class="frameWrap">
+      <iframe id="sheetFrame" src="${current.url}" loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </div>
+  `;
+
+  document.querySelectorAll(".nav button").forEach((b, idx) => b.classList.toggle("active", idx===i));
+  applyZoom();
+}
+
+tabs.forEach((t,i)=>{
+  const b = document.createElement("button");
+  b.innerHTML = `<span>${t.name}</span><span class="badge">${t.tag}</span>`;
+  b.onclick = () => render(i);
+  nav.appendChild(b);
+});
+
+openBtn.onclick = () => {
+  if(!current) return;
+  window.open(toViewUrl(current.editUrl), "_blank", "noopener");
+};
+
+editBtn.onclick = () => {
+  if(current?.editUrl) window.open(current.editUrl, "_blank", "noopener");
+};
+
+zoomInBtn.onclick = () => { zoom = Math.min(1.6, +(zoom + 0.1).toFixed(2)); applyZoom(); };
+zoomOutBtn.onclick = () => { zoom = Math.max(0.6, +(zoom - 0.1).toFixed(2)); applyZoom(); };
+zoomResetBtn.onclick = () => { zoom = 1; applyZoom(); };
+
+render(0);
+
+setInterval(()=>{
+  document.getElementById("clock").innerText = new Date().toLocaleString("pt-BR");
+}, 1000);
+</script>
+
+</body>
+</html>
