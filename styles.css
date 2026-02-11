@@ -106,13 +106,6 @@ th,td{
   border-right:1px solid rgba(255,255,255,.08);
   padding:8px 10px;font-size:13px;white-space:nowrap;
 }
-/* FIX: cabeçalho não sobrepor linhas (gruda abaixo da toolbar) */
-th{
-  position:sticky;
-  top:52px; /* altura aproximada da toolbar */
-  z-index:4;
-  background: rgba(79,140,255,.12);
-  font-weight:900;
 }
 tr:hover td{background:rgba(255,255,255,.04)}
 
