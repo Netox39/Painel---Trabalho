@@ -152,3 +152,17 @@ th{
   backdrop-filter: blur(6px);
   font-weight: 900;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
