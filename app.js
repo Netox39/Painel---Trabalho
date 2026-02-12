@@ -521,33 +521,66 @@ nav.appendChild(drawerWrap);
 
 
 const setDrawerHeight = ()=>{
-  // quando fechado: altura 0 e depois some pra não “vazar” conteúdo
-  if(!drawerWrap.classList.contains("open")){
+  // mantém a animação suave e calcula a altura real do conteúdo
+  if(drawerWrap.classList.contains("open")){
+    // precisa estar visível para scrollHeight funcionar
+    body.style.display = "flex";
+    // espera um frame pra layout recalcular (fonts/badges)
+    requestAnimationFrame(()=>{
+      body.style.maxHeight = body.scrollHeight + "px";
+    });
+  }else{
     body.style.maxHeight = "0px";
-    // espera a animação acabar para esconder de vez
-    clearTimeout(body.__hideTimer);
-    body.__hideTimer = setTimeout(()=>{ body.style.display = "none"; }, 360);
-    return;
   }
-
-  // quando aberto: mostra e calcula altura real
-  body.style.display = "flex";
-  clearTimeout(body.__hideTimer);
-  // 2 RAF para garantir layout calculado
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    body.style.maxHeight = body.scrollHeight + "px";
-  }));
 };
+
+function openDrawer(){
+  if(drawerWrap.classList.contains("open")) return;
+  drawerWrap.classList.add("open");
+  toggle.setAttribute("aria-expanded","true");
+  body.style.display = "flex";
+  // anima: de 0 -> altura real
+  requestAnimationFrame(()=>{
+    body.style.maxHeight = body.scrollHeight + "px";
+  });
+}
+
+function closeDrawer(){
+  if(!drawerWrap.classList.contains("open")) return;
+  drawerWrap.classList.remove("open");
+  toggle.setAttribute("aria-expanded","false");
+  // anima: altura -> 0, e depois remove do fluxo
+  body.style.maxHeight = body.scrollHeight + "px";
+  requestAnimationFrame(()=>{ body.style.maxHeight = "0px"; });
+}
 
 // inicia recolhida por padrão (T.I fechada)
 body.style.display = "none";
-setDrawerHeight();
+body.style.maxHeight = "0px";
 
 toggle.onclick = ()=>{
-  drawerWrap.classList.toggle("open");
-  toggle.setAttribute("aria-expanded", drawerWrap.classList.contains("open") ? "true" : "false");
-  setDrawerHeight();
+  if(drawerWrap.classList.contains("open")){
+    closeDrawer();
+  }else{
+    openDrawer();
+  }
 };
+
+// após o fechamento terminar, esconde de verdade (evita "vazar" conteúdo)
+body.addEventListener("transitionend", (e)=>{
+  if(e.propertyName !== "max-height") return;
+  if(!drawerWrap.classList.contains("open")){
+    body.style.display = "none";
+  }else{
+    // permite crescer se o conteúdo mudar
+    body.style.display = "flex";
+    body.style.maxHeight = body.scrollHeight + "px";
+  }
+});
+
+// garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
+window.addEventListener("resize", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
+window.addEventListener("load", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
 
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
 window.addEventListener("resize", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
