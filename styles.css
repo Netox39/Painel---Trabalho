@@ -307,4 +307,14 @@ th{
 .status-andamento{background:#facc1533;color:#ffd666}
 .status-concluido{background:#22c55e33;color:#8cffb5}
 .status-pendente{background:#ef444433;color:#ff9a9a}
+  
+  /* força o logo da tela inicial a ficar 2x maior */
+img[src="/logo.png"],
+img[src$="logo.png"],
+img[alt="Logo"]{
+  height: 240px !important;
+  width: auto !important;
+  object-fit: contain !important;
+}
+
 
