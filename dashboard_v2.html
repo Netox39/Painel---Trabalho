@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Trabalho — Dashboard</title>
+  <link rel="stylesheet" href="styles_v2.css" />
+</head>
+<body>
+  <div class="header">
+   <div class="brand">
+  <div class="logoBox logo-img">
+    <img src="./logo.png" alt="Faculdade Christus Eusébio">
+  </div>
+
+  <div class="brandText">
+    <div class="appTitle"><b>Painel de Trabalho</b></div>
+    <div class="appSub">Faculdade Christus Eusébio</div>
+  </div>
+</div>
+
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="clock" id="clock">—</div>
+      <button class="btn" id="userBtn" title="Usuário">—</button>
+      <button class="btn danger" id="logoutBtn">Sair</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="sidebar">
+      <div class="nav" id="nav"></div>
+    </div>
+
+    <div class="main">
+      <div class="contentWrap">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div>
+            <div id="title" style="font-weight:900;font-size:16px">—</div>
+            <div class="note" id="subtitle">—</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn" id="zoomOut" title="Diminuir zoom">−</button>
+            <button class="btn" id="zoomReset" title="Resetar zoom">100%</button>
+            <button class="btn" id="zoomIn" title="Aumentar zoom">+</button>
+            <button class="btn ok" id="addBtn">+ Adicionar</button>
+          </div>
+        </div>
+
+        <div class="panel" id="panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalBackdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div id="modalTitle" style="font-weight:900">—</div>
+        <button class="btn" id="modalClose">Fechar</button>
+      </div>
+      <div class="modalBody" id="modalBody"></div>
+      <div class="modalFooter" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="site.js"></script>
+  <script src="app.js"></script>
+  <script>
+    setInterval(()=>clock.textContent=new Date().toLocaleString("pt-BR"), 1000);
+  </script>
+</body>
+</html>
+
+
