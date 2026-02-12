@@ -510,6 +510,26 @@ async function refresh(){
   hookToolbar(current);
 }
 
+
+function showEmptyState(){
+  current = null;
+
+  // limpa destaque do menu
+  document.querySelectorAll(".nav button[data-tab-idx]").forEach(b=>{
+    b.classList.remove("active");
+  });
+
+  titleEl.textContent = "Painel de Trabalho";
+  subtitleEl.textContent = "Selecione uma opção no menu T.I para começar.";
+
+  panel.innerHTML = `
+    <div style="padding:40px 20px; text-align:center; opacity:.65">
+      <div style="font-size:18px; font-weight:800; margin-bottom:6px">Bem-vindo</div>
+      <div style="font-size:14px">Clique em uma aba no menu <b>T.I</b> para visualizar os dados.</div>
+    </div>
+  `;
+}
+
 function renderTab(i){
   current = TABS[i];
   titleEl.textContent = current.name;
@@ -599,10 +619,9 @@ body.addEventListener("transitionend", (e)=>{
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
 window.addEventListener("resize", setDrawerHeight);
 
-// carrega a primeira aba automaticamente
-renderTab(0);
-
-  // realtime (best-effort)
+// não carrega nenhuma aba automaticamente
+showEmptyState();
+// realtime (best-effort)
   try{
     for(const t of TABS){
       client.channel("rt_"+t.table)
