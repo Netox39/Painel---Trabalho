@@ -510,6 +510,25 @@ async function refresh(){
   hookToolbar(current);
 }
 
+
+function showEmptyState(){
+  current = null;
+
+  document.querySelectorAll(".nav button[data-tab-idx]").forEach(b=>{
+    b.classList.remove("active");
+  });
+
+  titleEl.textContent = "Painel de Trabalho";
+  subtitleEl.textContent = "Selecione uma opção no menu T.I para começar.";
+
+  panel.innerHTML = `
+    <div style="padding:40px 20px; text-align:center; opacity:.6">
+      <h2>Bem-vindo</h2>
+      <p>Clique em uma aba no menu T.I para visualizar os dados.</p>
+    </div>
+  `;
+}
+
 function renderTab(i){
   current = TABS[i];
   titleEl.textContent = current.name;
@@ -521,6 +540,8 @@ function renderTab(i){
 addBtn.onclick = ()=>{ if(current) openCreate(current); };
 
 (async function init(){
+  // inicia dashboard vazio
+  showEmptyState();
   await requireAuth();
 
   // NAV: comprime TODAS as abas dentro de uma gaveta "T.I" (com animação suave)
@@ -548,8 +569,14 @@ TABS.forEach((t,i)=> body.appendChild(mkNavBtn(t,i)));
 
 drawerWrap.appendChild(toggle);
 drawerWrap.appendChild(body);
+
 nav.appendChild(drawerWrap);
 
+// força estado inicial: T.I recolhida
+drawerWrap.classList.remove("open");
+toggle.setAttribute("aria-expanded","false");
+body.style.display = "none";
+body.style.maxHeight = "0px";
 const setDrawerHeight = ()=>{
   if(drawerWrap.classList.contains("open")){
     body.style.maxHeight = body.scrollHeight + "px";
@@ -570,7 +597,7 @@ toggle.onclick = ()=>{
 window.addEventListener("resize", setDrawerHeight);
 
 // carrega a primeira aba automaticamente
-renderTab(0);
+
 
   // realtime (best-effort)
   try{
