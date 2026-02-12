@@ -180,8 +180,8 @@ th{
 }
 
 .logo-img {
-  width: 80px;
-  height: 80px;
+  width: auto;
+  height: 56px;
   object-fit: contain;
 }
 
