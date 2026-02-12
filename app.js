@@ -176,6 +176,186 @@ const TABS = [
   }
 ];
 
+
+// ===== MENU CONFIG (Raíz + pastas) =====
+const TAB_BY_KEY = Object.fromEntries(TABS.map(t => [t.key, t]));
+const MENU_STORAGE_KEY = "menu_config_v1";
+
+// menu padrão: Raíz -> T.I (todas as abas atuais)
+const DEFAULT_MENU = {
+  title: "Raíz",
+  open: true,
+  children: [
+    { title: "T.I", open: false, tabs: TABS.map(t=>t.key) },
+    // Exemplos (adicione/remove como quiser no editor do menu):
+    // { title: "RH", open: false, tabs: [] },
+    // { title: "Financeiro", open: false, tabs: [] },
+  ]
+};
+
+function loadMenuConfig(){
+  try{
+    const raw = localStorage.getItem(MENU_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){
+    return null;
+  }
+}
+function saveMenuConfig(cfg){
+  localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(cfg));
+}
+
+function renderTabByKey(key){
+  const idx = TABS.findIndex(t => t.key === key);
+  if(idx < 0){
+    toast("Aba não encontrada: " + key);
+    return;
+  }
+  renderTab(idx);
+}
+
+// Cria uma gaveta/pasta (suporta subpastas)
+function buildFolder(folder){
+  const wrap = document.createElement("div");
+  wrap.className = "drawerWrap";
+
+  const toggle = document.createElement("button");
+  toggle.className = "drawerToggle";
+  toggle.type = "button";
+  toggle.innerHTML = `<span>${folder.title || "Pasta"}</span><span class="badge">Menu</span>`;
+  toggle.setAttribute("aria-expanded", folder.open ? "true" : "false");
+
+  const body = document.createElement("div");
+  body.className = "drawerBody";
+
+  // Tabs dentro da pasta
+  (folder.tabs || []).forEach((key)=>{
+    const t = TAB_BY_KEY[key];
+    if(!t) return;
+    const b = document.createElement("button");
+    b.dataset.tabKey = key;
+    b.innerHTML = `<span>${t.name}</span><span class="badge">${t.badge}</span>`;
+    b.onclick = ()=> renderTabByKey(key);
+    body.appendChild(b);
+  });
+
+  // Subpastas
+  (folder.children || []).forEach((child)=>{
+    body.appendChild(buildFolder(child));
+  });
+
+  wrap.appendChild(toggle);
+  wrap.appendChild(body);
+
+  // estado inicial recolhido/aberto
+  if(folder.open){
+    wrap.classList.add("open");
+    body.style.display = "flex";
+    requestAnimationFrame(()=>{ body.style.maxHeight = body.scrollHeight + "px"; });
+  }else{
+    wrap.classList.remove("open");
+    body.style.display = "none";
+    body.style.maxHeight = "0px";
+  }
+
+  const setHeight = ()=>{
+    if(wrap.classList.contains("open")){
+      body.style.display = "flex";
+      requestAnimationFrame(()=>{ body.style.maxHeight = body.scrollHeight + "px"; });
+    }else{
+      body.style.maxHeight = "0px";
+    }
+  };
+
+  toggle.onclick = ()=>{
+    const willOpen = !wrap.classList.contains("open");
+    if(willOpen){
+      wrap.classList.add("open");
+      toggle.setAttribute("aria-expanded","true");
+      setHeight();
+    }else{
+      wrap.classList.remove("open");
+      toggle.setAttribute("aria-expanded","false");
+      setHeight();
+    }
+  };
+
+  body.addEventListener("transitionend", (e)=>{
+    if(e.propertyName !== "max-height") return;
+    if(!wrap.classList.contains("open")){
+      body.style.display = "none";
+    }else{
+      body.style.maxHeight = body.scrollHeight + "px";
+    }
+  });
+
+  window.addEventListener("resize", ()=>{ if(wrap.classList.contains("open")) setHeight(); });
+
+  return wrap;
+}
+
+function openMenuEditor(cfg){
+  const json = JSON.stringify(cfg, null, 2);
+
+  openModal(
+    "Editar Menu (Raíz / Pastas)",
+    `
+      <div class="hint" style="text-align:left; margin-top:0">
+        Edite a estrutura das pastas. Em <b>tabs</b>, use as chaves das abas (ex.: <code>inventario</code>).<br/>
+        <span style="opacity:.9">Dica: copie e cole, depois clique em Salvar.</span>
+      </div>
+      <textarea id="menuJson" class="input" style="height:280px; margin-top:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">${escapeHtml(json)}</textarea>
+    `,
+    `
+      <button class="btn" id="cancelMenu">Cancelar</button>
+      <button class="btn linklike" id="resetMenu">Resetar</button>
+      <button class="btn primary" id="saveMenu">Salvar</button>
+    `
+  );
+
+  document.getElementById("cancelMenu").onclick = closeModal;
+  document.getElementById("resetMenu").onclick = ()=>{
+    localStorage.removeItem(MENU_STORAGE_KEY);
+    closeModal();
+    renderNav();
+    toast("Menu resetado.");
+  };
+  document.getElementById("saveMenu").onclick = ()=>{
+    try{
+      const raw = document.getElementById("menuJson").value;
+      const next = JSON.parse(raw);
+      saveMenuConfig(next);
+      closeModal();
+      renderNav();
+      toast("Menu atualizado!");
+    }catch(e){
+      toast("JSON inválido. Revise vírgulas/aspas.");
+    }
+  };
+}
+
+// Renderiza o menu lateral com a pasta Raíz e o botão de edição
+function renderNav(){
+  nav.innerHTML = "";
+
+  const cfg = loadMenuConfig() || DEFAULT_MENU;
+
+  const editBtn = document.createElement("button");
+  editBtn.className = "btn";
+  editBtn.style.width = "100%";
+  editBtn.style.marginBottom = "10px";
+  editBtn.textContent = "Editar menu";
+  editBtn.onclick = ()=> openMenuEditor(cfg);
+  nav.appendChild(editBtn);
+
+  nav.appendChild(buildFolder(cfg));
+
+  // remove seleção visual de botões (início)
+  document.querySelectorAll(".nav button[data-tab-idx], .nav button[data-tab-key]").forEach(b=>{
+    b.classList.remove("active");
+  });
+}
+
 const nav = document.getElementById("nav");
 const panel = document.getElementById("panel");
 const titleEl = document.getElementById("title");
@@ -515,7 +695,7 @@ function showEmptyState(){
   current = null;
 
   // limpa destaque do menu
-  document.querySelectorAll(".nav button[data-tab-idx]").forEach(b=>{
+  document.querySelectorAll(".nav button[data-tab-idx], .nav button[data-tab-key]").forEach(b=>{
     b.classList.remove("active");
   });
 
@@ -534,7 +714,7 @@ function renderTab(i){
   current = TABS[i];
   titleEl.textContent = current.name;
   subtitleEl.textContent = current.subtitle;
-  document.querySelectorAll(".nav button[data-tab-idx]").forEach((b) => b.classList.toggle("active", Number(b.dataset.tabIdx)===i));
+  document.querySelectorAll(".nav button[data-tab-idx], .nav button[data-tab-key]").forEach((b) => b.classList.toggle("active", Number(b.dataset.tabIdx)===i));
   refresh();
 }
 
@@ -543,85 +723,13 @@ addBtn.onclick = ()=>{ if(current) openCreate(current); };
 (async function init(){
   await requireAuth();
 
-  // NAV: comprime TODAS as abas dentro de uma gaveta "T.I" (com animação suave)
-const mkNavBtn = (t,i)=>{
-  const b = document.createElement("button");
-  b.dataset.tabIdx = i;
-  b.innerHTML = `<span>${t.name}</span><span class="badge">${t.badge}</span>`;
-  b.onclick = ()=>renderTab(i);
-  return b;
-};
+  // NAV: menu com Raíz + pastas (editável no próprio painel)
+  renderNav();
 
-const drawerWrap = document.createElement("div");
-drawerWrap.className = "drawerWrap";
+  // não carrega nenhuma aba automaticamente
+  showEmptyState();
 
-const toggle = document.createElement("button");
-toggle.className = "drawerToggle";
-toggle.type = "button";
-toggle.innerHTML = `<span>T.I</span><span class="badge">Menu</span>`;
-
-const body = document.createElement("div");
-body.className = "drawerBody";
-
-// adiciona todas as abas dentro da gaveta
-TABS.forEach((t,i)=> body.appendChild(mkNavBtn(t,i)));
-
-drawerWrap.appendChild(toggle);
-drawerWrap.appendChild(body);
-
-nav.appendChild(drawerWrap);
-
-// força estado inicial: T.I recolhida
-drawerWrap.classList.remove("open");
-toggle.setAttribute("aria-expanded","false");
-body.style.display = "none";
-body.style.maxHeight = "0px";
-const setDrawerHeight = ()=>{
-  if(drawerWrap.classList.contains("open")){
-    // precisa estar visível para medir altura corretamente
-    body.style.display = "flex";
-    // mede no próximo frame para pegar scrollHeight correto
-    requestAnimationFrame(()=>{
-      body.style.maxHeight = body.scrollHeight + "px";
-    });
-  }else{
-    body.style.maxHeight = "0px";
-  }
-};
-
-// inicia recolhida (sem abrir automaticamente)
-setDrawerHeight();
-
-toggle.onclick = ()=>{
-  const willOpen = !drawerWrap.classList.contains("open");
-  if(willOpen){
-    drawerWrap.classList.add("open");
-    toggle.setAttribute("aria-expanded","true");
-    setDrawerHeight();
-  }else{
-    drawerWrap.classList.remove("open");
-    toggle.setAttribute("aria-expanded","false");
-    setDrawerHeight();
-  }
-};
-
-// após fechar a animação, esconde o conteúdo (evita "vazar" clique/scroll)
-body.addEventListener("transitionend", (e)=>{
-  if(e.propertyName !== "max-height") return;
-  if(!drawerWrap.classList.contains("open")){
-    body.style.display = "none";
-  }else{
-    // mantém altura correta se algo mudar
-    body.style.maxHeight = body.scrollHeight + "px";
-  }
-});
-
-// garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
-window.addEventListener("resize", setDrawerHeight);
-
-// não carrega nenhuma aba automaticamente
-showEmptyState();
-// realtime (best-effort)
+  // realtime (best-effort)
   try{
     for(const t of TABS){
       client.channel("rt_"+t.table)
