@@ -513,19 +513,16 @@ async function refresh(){
 
 function showEmptyState(){
   current = null;
-
-  // limpa destaque do menu
-  document.querySelectorAll(".nav button[data-tab-idx]").forEach(b=>{
-    b.classList.remove("active");
-  });
-
+  // limpa estado visual do nav
+  document.querySelectorAll(".nav button[data-tab-idx]").forEach((b)=> b.classList.remove("active"));
+  // título/subtítulo padrão
   titleEl.textContent = "Painel de Trabalho";
-  subtitleEl.textContent = "Selecione uma opção no menu T.I para começar.";
-
+  subtitleEl.textContent = "Selecione uma opção no menu T.I para visualizar os dados.";
+  // conteúdo inicial (sem tabela)
   panel.innerHTML = `
-    <div style="padding:40px 20px; text-align:center; opacity:.65">
+    <div style="padding:40px 22px; text-align:center; opacity:.7">
       <div style="font-size:18px; font-weight:800; margin-bottom:6px">Bem-vindo</div>
-      <div style="font-size:14px">Clique em uma aba no menu <b>T.I</b> para visualizar os dados.</div>
+      <div style="font-size:14px">Clique em uma aba no menu <b>T.I</b> para carregar a tabela.</div>
     </div>
   `;
 }
@@ -559,6 +556,7 @@ const toggle = document.createElement("button");
 toggle.className = "drawerToggle";
 toggle.type = "button";
 toggle.innerHTML = `<span>T.I</span><span class="badge">Menu</span>`;
+toggle.setAttribute("aria-expanded","false");
 
 const body = document.createElement("div");
 body.className = "drawerBody";
@@ -568,60 +566,32 @@ TABS.forEach((t,i)=> body.appendChild(mkNavBtn(t,i)));
 
 drawerWrap.appendChild(toggle);
 drawerWrap.appendChild(body);
-
 nav.appendChild(drawerWrap);
 
-// força estado inicial: T.I recolhida
-drawerWrap.classList.remove("open");
-toggle.setAttribute("aria-expanded","false");
-body.style.display = "none";
-body.style.maxHeight = "0px";
 const setDrawerHeight = ()=>{
   if(drawerWrap.classList.contains("open")){
-    // precisa estar visível para medir altura corretamente
-    body.style.display = "flex";
-    // mede no próximo frame para pegar scrollHeight correto
-    requestAnimationFrame(()=>{
-      body.style.maxHeight = body.scrollHeight + "px";
-    });
+    body.style.maxHeight = body.scrollHeight + "px";
   }else{
     body.style.maxHeight = "0px";
   }
 };
 
-// inicia recolhida (sem abrir automaticamente)
-setDrawerHeight();
+// inicia recolhida por padrão (T.I fechada)
+requestAnimationFrame(()=>{ setDrawerHeight(); });
 
 toggle.onclick = ()=>{
-  const willOpen = !drawerWrap.classList.contains("open");
-  if(willOpen){
-    drawerWrap.classList.add("open");
-    toggle.setAttribute("aria-expanded","true");
-    setDrawerHeight();
-  }else{
-    drawerWrap.classList.remove("open");
-    toggle.setAttribute("aria-expanded","false");
-    setDrawerHeight();
-  }
+  drawerWrap.classList.toggle("open");
+  toggle.setAttribute("aria-expanded", drawerWrap.classList.contains("open") ? "true" : "false");
+  setDrawerHeight();
 };
-
-// após fechar a animação, esconde o conteúdo (evita "vazar" clique/scroll)
-body.addEventListener("transitionend", (e)=>{
-  if(e.propertyName !== "max-height") return;
-  if(!drawerWrap.classList.contains("open")){
-    body.style.display = "none";
-  }else{
-    // mantém altura correta se algo mudar
-    body.style.maxHeight = body.scrollHeight + "px";
-  }
-});
 
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
 window.addEventListener("resize", setDrawerHeight);
 
-// não carrega nenhuma aba automaticamente
-showEmptyState();
-// realtime (best-effort)
+  // NÃO carrega nenhuma aba automaticamente: o usuário escolhe no menu
+  showEmptyState();
+
+  // realtime (best-effort)
   try{
     for(const t of TABS){
       client.channel("rt_"+t.table)
