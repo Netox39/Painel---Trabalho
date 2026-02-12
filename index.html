@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Trabalho — Login</title>
+
+  <!-- Carrega as chaves -->
+  <script src="./config.js"></script>
+  <!-- Carrega a lib do Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1b2e; --muted:#97a3b6; --text:#e8eefc;
+      --accent:#4fd1c5; --danger:#ff6b6b; --ok:#65d38c; --border:rgba(255,255,255,.10);
+      --shadow: 0 18px 45px rgba(0,0,0,.35); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(79,209,197,.25), transparent 55%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(101,211,140,.20), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:28px 16px;
+    }
+    .wrap{width:100%; max-width:420px;}
+    .brand{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:18px;}
+    .badge{
+      display:flex; align-items:center; gap:10px;
+      background:rgba(255,255,255,.92);
+      color:#0b1220;
+      border-radius:999px;
+      padding:10px 14px;
+      box-shadow:var(--shadow);
+    }
+    .badge img{width:28px; height:28px; object-fit:contain}
+    .badge .title{font-weight:800; letter-spacing:.2px}
+    .sub{text-align:center; color:var(--muted); margin:12px 0 0; font-size:14px; line-height:1.4;}
+    .card{
+      margin-top:16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    label{display:block; font-size:13px; color:var(--muted); margin:12px 0 6px;}
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(6,10,18,.55);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus{border-color:rgba(79,209,197,.45); box-shadow:0 0 0 4px rgba(79,209,197,.12)}
+    .row{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap}
+    button, .btn{
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:11px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      flex:1;
+      min-width:130px;
+      text-decoration:none;
+      text-align:center;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    button.primary{
+      background: linear-gradient(135deg, rgba(79,209,197,.95), rgba(101,211,140,.92));
+      color:#062018;
+      border: none;
+    }
+    .btn.linklike{
+      background:transparent;
+      border:1px dashed rgba(255,255,255,.22);
+      color:var(--text);
+      font-weight:800;
+    }
+    button:disabled{opacity:.55; cursor:not-allowed}
+    .hint{margin-top:14px; font-size:13px; color:var(--muted); text-align:center;}
+    .status{
+      margin-top:12px;
+      font-size:13px;
+      line-height:1.35;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+      display:none;
+    }
+    .status.show{display:block}
+    .status.ok{border-color: rgba(101,211,140,.45)}
+    .status.err{border-color: rgba(255,107,107,.45)}
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <div class="badge" aria-label="Faculdade Christus">
+        <img src="./logo.png" alt="Logo" onerror="this.style.display='none'">
+        <div>
+          <div class="title">Painel de Trabalho</div>
+          <div style="font-size:12px; opacity:.7; margin-top:1px;">Faculdade Christus</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="sub">
+      Entre com seu usuário e senha. Para criar conta ou recuperar senha, abre em uma nova aba.
+    </p>
+
+    <section class="card">
+      <form id="loginForm" autocomplete="on">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" inputmode="email" autocomplete="email" required />
+
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+
+        <div class="row">
+          <button class="primary" id="btnLogin" type="submit">Entrar</button>
+          <a class="btn linklike" href="./signup.html" target="_blank" rel="noopener">Criar conta</a>
+          <a class="btn linklike" href="./forgot.html" target="_blank" rel="noopener">Esqueci a senha</a>
+        </div>
+
+        <div id="loginStatus" class="status" role="status" aria-live="polite"></div>
+      </form>
+
+      <div class="hint">
+        Suba o arquivo <code>config.js</code> com as chaves do Supabase.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function mustHaveConfig(){
+      if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+        alert("Não encontrei SUPABASE_URL e SUPABASE_ANON_KEY em config.js.");
+        throw new Error("Missing Supabase config");
+      }
+    }
+    function mustHaveSupabaseLib(){
+      if(!window.supabase || !window.supabase.createClient){
+        alert("A biblioteca do Supabase não carregou (cdn).");
+        throw new Error("Supabase lib not loaded");
+      }
+    }
+
+    // IMPORTANTE: não use 'const supabase = ...' para não bater com outras partes do site.
+    // Use uma variável local com outro nome (sb).
+    mustHaveConfig();
+    mustHaveSupabaseLib();
+    const sb = window.sbClient || (window.sbClient = window.supabase.createClient(
+      window.SUPABASE_URL,
+      window.SUPABASE_ANON_KEY
+    ));
+
+    const loginForm = $("loginForm");
+    const btnLogin = $("btnLogin");
+    const loginStatus = $("loginStatus");
+
+    function showStatus(el, msg, ok){
+      el.textContent = msg;
+      el.classList.remove("ok","err","show");
+      el.classList.add("show", ok ? "ok" : "err");
+    }
+    function clearStatus(el){
+      el.textContent = "";
+      el.classList.remove("ok","err","show");
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearStatus(loginStatus);
+
+      const email = $("email").value.trim();
+      const password = $("password").value;
+
+      if(!email || !password){
+        showStatus(loginStatus, "Preencha e-mail e senha.", false);
+        return;
+      }
+
+      try{
+        btnLogin.disabled = true;
+        btnLogin.textContent = "Entrando…";
+
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+
+        window.location.href = "./dashboard.html";
+      }catch(err){
+        console.error(err);
+        showStatus(loginStatus, "Falha no login: " + (err?.message || "erro"), false);
+      }finally{
+        btnLogin.disabled = false;
+        btnLogin.textContent = "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>
