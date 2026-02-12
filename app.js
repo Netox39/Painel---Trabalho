@@ -519,16 +519,29 @@ drawerWrap.appendChild(toggle);
 drawerWrap.appendChild(body);
 nav.appendChild(drawerWrap);
 
+
 const setDrawerHeight = ()=>{
-  if(drawerWrap.classList.contains("open")){
-    body.style.maxHeight = body.scrollHeight + "px";
-  }else{
+  // quando fechado: altura 0 e depois some pra não “vazar” conteúdo
+  if(!drawerWrap.classList.contains("open")){
     body.style.maxHeight = "0px";
+    // espera a animação acabar para esconder de vez
+    clearTimeout(body.__hideTimer);
+    body.__hideTimer = setTimeout(()=>{ body.style.display = "none"; }, 360);
+    return;
   }
+
+  // quando aberto: mostra e calcula altura real
+  body.style.display = "flex";
+  clearTimeout(body.__hideTimer);
+  // 2 RAF para garantir layout calculado
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    body.style.maxHeight = body.scrollHeight + "px";
+  }));
 };
 
 // inicia recolhida por padrão (T.I fechada)
-setDrawerHeight(); // inicia recolhida
+body.style.display = "none";
+setDrawerHeight();
 
 toggle.onclick = ()=>{
   drawerWrap.classList.toggle("open");
@@ -537,8 +550,7 @@ toggle.onclick = ()=>{
 };
 
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
-window.addEventListener("resize", setDrawerHeight);
-
+window.addEventListener("resize", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
   // NÃO carrega nenhuma aba automaticamente: o usuário escolhe no menu
   showEmptyState();
 
