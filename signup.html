@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel — Criar conta</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220; --text:#e8eefc; --muted:#97a3b6; --border:rgba(255,255,255,.10);
+      --shadow: 0 18px 45px rgba(0,0,0,.35); --radius:18px; --ok:#65d38c; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(79,209,197,.18), transparent 55%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(101,211,140,.14), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px 14px;
+    }
+    .card{
+      width:100%;
+      max-width:420px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    h1{font-size:16px;margin:0}
+    p{color:var(--muted); font-size:13px; line-height:1.4}
+    label{display:block; font-size:13px; color:var(--muted); margin:12px 0 6px;}
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(6,10,18,.55);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus{border-color:rgba(79,209,197,.45); box-shadow:0 0 0 4px rgba(79,209,197,.12)}
+    button{
+      width:100%;
+      margin-top:12px;
+      padding:11px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:900;
+      border:none;
+      background: linear-gradient(135deg, rgba(79,209,197,.95), rgba(101,211,140,.92));
+      color:#062018;
+    }
+    .status{
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.35;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+      display:none;
+    }
+    .status.show{display:block}
+    .status.ok{border-color: rgba(101,211,140,.45)}
+    .status.err{border-color: rgba(255,107,107,.45)}
+    a{color:var(--text)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Criar conta</h1>
+    <p>Crie sua conta com e-mail e senha. Se o projeto exigir confirmação, verifique seu e-mail (e spam).</p>
+
+    <form id="form">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" autocomplete="email" required />
+
+      <label for="pass">Senha</label>
+      <input id="pass" type="password" autocomplete="new-password" required />
+
+      <button id="btn" type="submit">Criar conta</button>
+      <div id="st" class="status" role="status" aria-live="polite"></div>
+    </form>
+
+    <p style="margin-top:12px"><a href="./index.html">Voltar ao login</a></p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    function mustHaveConfig(){
+      if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+        alert("Falta config.js (SUPABASE_URL / SUPABASE_ANON_KEY).");
+        throw new Error("Missing Supabase config");
+      }
+    }
+    function show(msg, ok){
+      const el = $("st");
+      el.textContent = msg;
+      el.classList.remove("ok","err","show");
+      el.classList.add("show", ok ? "ok" : "err");
+    }
+    mustHaveConfig();
+    const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("btn").disabled = true;
+      $("btn").textContent = "Criando…";
+
+      const email = $("email").value.trim();
+      const password = $("pass").value;
+
+      try{
+        const { error } = await supabase.auth.signUp({ email, password });
+        if(error) throw error;
+        show("Conta criada! Se necessário, confirme no e-mail.", true);
+      }catch(err){
+        console.error(err);
+        show("Erro: " + (err?.message || "falha"), false);
+      }finally{
+        $("btn").disabled = false;
+        $("btn").textContent = "Criar conta";
+      }
+    });
+  </script>
+</body>
+</html>

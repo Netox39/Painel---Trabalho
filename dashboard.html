@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel de Trabalho — Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f1b2e;
+      --muted:#97a3b6;
+      --text:#e8eefc;
+      --accent:#4fd1c5;
+      --danger:#ff6b6b;
+      --ok:#65d38c;
+      --border:rgba(255,255,255,.10);
+      --shadow: 0 18px 45px rgba(0,0,0,.35);
+      --radius:18px;
+      --headerH:64px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(79,209,197,.18), transparent 55%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(101,211,140,.14), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    header{
+      position:sticky; top:0; z-index:50;
+      height:var(--headerH);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px;
+      background: linear-gradient(180deg, rgba(11,18,32,.98), rgba(11,18,32,.82));
+      border-bottom:1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    .brand{display:flex; gap:10px; align-items:center}
+    .pill{
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:8px 12px;
+      display:flex; gap:8px; align-items:center;
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+    }
+    .pill img{width:22px;height:22px;object-fit:contain}
+    .title{font-weight:900}
+    .muted{color:var(--muted); font-size:12px}
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
+    button{
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    button.primary{
+      background: linear-gradient(135deg, rgba(79,209,197,.95), rgba(101,211,140,.92));
+      color:#062018;
+      border:none;
+    }
+    button.danger{
+      background:rgba(255,107,107,.12);
+      border-color:rgba(255,107,107,.35);
+    }
+    .wrap{padding:16px; max-width:1200px; margin:0 auto}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 900px){
+      .grid{grid-template-columns:1fr}
+    }
+    label{display:block; font-size:13px; color:var(--muted); margin:10px 0 6px;}
+    input, select, textarea{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(6,10,18,.55);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:44px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color:rgba(79,209,197,.45); box-shadow:0 0 0 4px rgba(79,209,197,.12)}
+    .status{
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.35;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+      display:none;
+    }
+    .status.show{display:block}
+    .status.ok{border-color: rgba(101,211,140,.45)}
+    .status.err{border-color: rgba(255,107,107,.45)}
+
+    .tableWrap{
+      margin-top:14px;
+      overflow:auto;
+      max-height: calc(100vh - var(--headerH) - 260px);
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.12);
+    }
+    table{width:100%; border-collapse:separate; border-spacing:0; min-width:980px;}
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: rgba(11,18,32,.98);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      color: var(--muted);
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.7px;
+      padding:12px 10px;
+      text-align:left;
+      white-space:nowrap;
+    }
+    tbody td{
+      padding:12px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      vertical-align:top;
+    }
+    tbody tr:hover td{background:rgba(255,255,255,.03)}
+    .tag{
+      display:inline-block;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .rowBtns{display:flex; gap:8px; align-items:center}
+    .rowBtns button{padding:8px 10px; border-radius:10px; font-weight:800}
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <div class="pill">
+        <img src="./logo.png" alt="Logo" onerror="this.style.display='none'">
+        <div>
+          <div class="title">Painel de Trabalho</div>
+          <div class="muted" id="userEmail">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnReload">Atualizar</button>
+      <button class="danger" id="btnLogout">Sair</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div>
+          <div class="title" style="font-size:16px">Cadastro de Equipamentos</div>
+          <div class="muted">Tabela “equipamentos” no Supabase (SQL pronto no arquivo <code>supabase.sql</code>).</div>
+        </div>
+      </div>
+
+      <form id="formCreate" style="margin-top:10px">
+        <div class="grid">
+          <div>
+            <label for="codigo">Código</label>
+            <input id="codigo" required />
+          </div>
+          <div>
+            <label for="andar">Andar</label>
+            <input id="andar" />
+          </div>
+          <div>
+            <label for="equipamento">Equipamento</label>
+            <input id="equipamento" required />
+          </div>
+          <div>
+            <label for="patrimonio">Patrimônio</label>
+            <input id="patrimonio" />
+          </div>
+          <div>
+            <label for="setor">Setor</label>
+            <input id="setor" />
+          </div>
+          <div>
+            <label for="responsavel">Responsável</label>
+            <input id="responsavel" />
+          </div>
+          <div style="grid-column:1 / -1">
+            <label for="observacoes">Observações</label>
+            <textarea id="observacoes"></textarea>
+          </div>
+          <div>
+            <label for="status">Status</label>
+            <select id="status">
+              <option value="Ativo">Ativo</option>
+              <option value="Manutenção">Manutenção</option>
+              <option value="Baixado">Baixado</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <button class="primary" type="submit" id="btnAdd">Adicionar</button>
+          <button type="button" id="btnClear">Limpar</button>
+        </div>
+
+        <div id="dashStatus" class="status" role="status" aria-live="polite"></div>
+      </form>
+
+      <div class="tableWrap" aria-label="Tabela de equipamentos">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Andar</th>
+              <th>Equipamento</th>
+              <th>Patrimônio</th>
+              <th>Setor</th>
+              <th>Responsável</th>
+              <th>Observações</th>
+              <th>Status</th>
+              <th style="min-width:130px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="9" class="muted" style="padding:14px">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function mustHaveConfig(){
+      if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){
+        alert("Falta config.js (SUPABASE_URL / SUPABASE_ANON_KEY). Suba o config.js correto e recarregue.");
+        throw new Error("Missing Supabase config");
+      }
+    }
+    function showStatus(el, msg, ok){
+      el.textContent = msg;
+      el.classList.remove("ok","err","show");
+      el.classList.add("show", ok ? "ok" : "err");
+    }
+    function clearStatus(el){
+      el.textContent = "";
+      el.classList.remove("ok","err","show");
+    }
+
+    mustHaveConfig();
+    const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+    const dashStatus = $("dashStatus");
+    const tbody = $("tbody");
+
+    async function requireSession(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = "./index.html";
+        return null;
+      }
+      $("userEmail").textContent = session.user?.email || "logado";
+      return session;
+    }
+
+    function rowHTML(r){
+      const safe = (v) => (v ?? "").toString().replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+      return `
+        <tr data-id="${safe(r.id)}">
+          <td><span class="tag">${safe(r.codigo)}</span></td>
+          <td>${safe(r.andar)}</td>
+          <td>${safe(r.equipamento)}</td>
+          <td>${safe(r.patrimonio)}</td>
+          <td>${safe(r.setor)}</td>
+          <td>${safe(r.responsavel)}</td>
+          <td>${safe(r.observacoes)}</td>
+          <td><span class="tag">${safe(r.status)}</span></td>
+          <td>
+            <div class="rowBtns">
+              <button type="button" data-edit="${safe(r.id)}">Editar</button>
+              <button type="button" class="danger" data-del="${safe(r.id)}">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    async function loadRows(){
+      clearStatus(dashStatus);
+      tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Carregando…</td></tr>`;
+
+      const session = await requireSession();
+      if(!session) return;
+
+      const { data, error } = await supabase
+        .from("equipamentos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if(error){
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="9" style="padding:14px">Erro ao carregar. Veja console.</td></tr>`;
+        showStatus(dashStatus, "Erro ao carregar dados: " + error.message, false);
+        return;
+      }
+
+      if(!data?.length){
+        tbody.innerHTML = `<tr><td colspan="9" class="muted" style="padding:14px">Sem registros ainda.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(rowHTML).join("");
+    }
+
+    function getFormValues(){
+      return {
+        codigo: $("codigo").value.trim(),
+        andar: $("andar").value.trim(),
+        equipamento: $("equipamento").value.trim(),
+        patrimonio: $("patrimonio").value.trim(),
+        setor: $("setor").value.trim(),
+        responsavel: $("responsavel").value.trim(),
+        observacoes: $("observacoes").value.trim(),
+        status: $("status").value
+      };
+    }
+
+    function setFormValues(r){
+      $("codigo").value = r.codigo ?? "";
+      $("andar").value = r.andar ?? "";
+      $("equipamento").value = r.equipamento ?? "";
+      $("patrimonio").value = r.patrimonio ?? "";
+      $("setor").value = r.setor ?? "";
+      $("responsavel").value = r.responsavel ?? "";
+      $("observacoes").value = r.observacoes ?? "";
+      $("status").value = r.status ?? "Ativo";
+    }
+
+    let editingId = null;
+
+    $("formCreate").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearStatus(dashStatus);
+
+      const values = getFormValues();
+      if(!values.codigo || !values.equipamento){
+        showStatus(dashStatus, "Preencha pelo menos Código e Equipamento.", false);
+        return;
+      }
+
+      try{
+        $("btnAdd").disabled = true;
+        $("btnAdd").textContent = editingId ? "Salvando…" : "Adicionando…";
+
+        if(editingId){
+          const { error } = await supabase.from("equipamentos").update(values).eq("id", editingId);
+          if(error) throw error;
+          showStatus(dashStatus, "Registro atualizado.", true);
+        }else{
+          const { error } = await supabase.from("equipamentos").insert(values);
+          if(error) throw error;
+          showStatus(dashStatus, "Registro adicionado.", true);
+        }
+
+        editingId = null;
+        $("btnAdd").textContent = "Adicionar";
+        e.target.reset();
+        $("status").value = "Ativo";
+        await loadRows();
+      }catch(err){
+        console.error(err);
+        showStatus(dashStatus, "Erro: " + (err?.message || "falha"), false);
+      }finally{
+        $("btnAdd").disabled = false;
+        $("btnAdd").textContent = editingId ? "Salvar" : "Adicionar";
+      }
+    });
+
+    $("btnClear").addEventListener("click", () => {
+      editingId = null;
+      $("btnAdd").textContent = "Adicionar";
+      $("formCreate").reset();
+      $("status").value = "Ativo";
+      clearStatus(dashStatus);
+    });
+
+    tbody.addEventListener("click", async (e) => {
+      const edit = e.target.closest("[data-edit]");
+      const del = e.target.closest("[data-del]");
+
+      if(edit){
+        const id = edit.getAttribute("data-edit");
+        const { data, error } = await supabase.from("equipamentos").select("*").eq("id", id).single();
+        if(error){ showStatus(dashStatus, "Erro ao abrir: " + error.message, false); return; }
+        editingId = id;
+        setFormValues(data);
+        $("btnAdd").textContent = "Salvar";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      if(del){
+        const id = del.getAttribute("data-del");
+        if(!confirm("Excluir este registro?")) return;
+        const { error } = await supabase.from("equipamentos").delete().eq("id", id);
+        if(error){ showStatus(dashStatus, "Erro ao excluir: " + error.message, false); return; }
+        showStatus(dashStatus, "Registro excluído.", true);
+        await loadRows();
+      }
+    });
+
+    $("btnReload").addEventListener("click", loadRows);
+
+    $("btnLogout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "./index.html";
+    });
+
+    // Redireciona se deslogar
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if(!session) window.location.href = "./index.html";
+    });
+
+    // Init
+    requireSession().then(loadRows);
+  </script>
+</body>
+</html>
