@@ -504,6 +504,7 @@ drawerWrap.className = "drawerWrap";
 
 const toggle = document.createElement("button");
 toggle.className = "drawerToggle";
+  toggle.setAttribute("aria-expanded","false");
 toggle.type = "button";
 toggle.innerHTML = `<span>T.I</span><span class="badge">Menu</span>`;
 toggle.setAttribute("aria-expanded","false");
@@ -527,7 +528,7 @@ const setDrawerHeight = ()=>{
 };
 
 // inicia recolhida por padrão (T.I fechada)
-requestAnimationFrame(()=>{ setDrawerHeight(); });
+setDrawerHeight(); // inicia recolhida
 
 toggle.onclick = ()=>{
   drawerWrap.classList.toggle("open");
