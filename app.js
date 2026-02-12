@@ -510,6 +510,23 @@ async function refresh(){
   hookToolbar(current);
 }
 
+
+function showEmptyState(){
+  current = null;
+  // limpa estado visual do nav
+  document.querySelectorAll(".nav button[data-tab-idx]").forEach((b)=> b.classList.remove("active"));
+  // título/subtítulo padrão
+  titleEl.textContent = "Painel de Trabalho";
+  subtitleEl.textContent = "Selecione uma opção no menu T.I para visualizar os dados.";
+  // conteúdo inicial (sem tabela)
+  panel.innerHTML = `
+    <div style="padding:40px 22px; text-align:center; opacity:.7">
+      <div style="font-size:18px; font-weight:800; margin-bottom:6px">Bem-vindo</div>
+      <div style="font-size:14px">Clique em uma aba no menu <b>T.I</b> para carregar a tabela.</div>
+    </div>
+  `;
+}
+
 function renderTab(i){
   current = TABS[i];
   titleEl.textContent = current.name;
@@ -571,8 +588,8 @@ toggle.onclick = ()=>{
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
 window.addEventListener("resize", setDrawerHeight);
 
-// carrega a primeira aba automaticamente
-renderTab(0);
+  // NÃO carrega nenhuma aba automaticamente: o usuário escolhe no menu
+  showEmptyState();
 
   // realtime (best-effort)
   try{
@@ -585,31 +602,3 @@ renderTab(0);
     }
   }catch(e){}
 })();
-// ✅ Ao carregar o dashboard: deixa TODAS as pastas recolhidas
-function collapseAllFoldersOnLoad() {
-  // 1) remove classes comuns de "aberto"
-  document.querySelectorAll(".open, .expanded, .active").forEach(el => {
-    el.classList.remove("open", "expanded", "active");
-  });
-
-  // 2) força aria-expanded=false em toggles
-  document.querySelectorAll("[aria-expanded='true']").forEach(el => {
-    el.setAttribute("aria-expanded", "false");
-  });
-
-  // 3) esconde listas/containers de itens (submenus)
-  document.querySelectorAll(".folder-children, .children, .submenu, .subnav, ul").forEach(list => {
-    // só esconde se estiver dentro do menu lateral
-    if (list.closest("#sidebar") || list.closest(".sidebar") || list.closest("nav") || list.closest(".nav")) {
-      // evita esconder listas da tabela/conteúdo principal
-      if (!list.closest("table") && !list.closest(".content") && !list.closest("#content")) {
-        list.style.display = "none";
-      }
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Se o menu é montado depois (via JS), chame isso logo após montar o menu.
-  collapseAllFoldersOnLoad();
-});
