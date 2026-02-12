@@ -42,6 +42,7 @@
             <button class="btn" id="zoomOut" title="Diminuir zoom">−</button>
             <button class="btn" id="zoomReset" title="Resetar zoom">100%</button>
             <button class="btn" id="zoomIn" title="Aumentar zoom">+</button>
+            <button class="btn" id="importSheetsBtn" title="Importar do Google Sheets">Importar</button>
             <button class="btn ok" id="addBtn">+ Adicionar</button>
           </div>
         </div>
@@ -66,10 +67,201 @@
 
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="site.js"></script>
   <script src="app.js"></script>
   <script>
     setInterval(()=>clock.textContent=new Date().toLocaleString("pt-BR"), 1000);
   </script>
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+
+      // Supabase client (reusa se já existir)
+      const getSb = () => {
+        if (window.__sb) return window.__sb;
+        if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY || !window.supabase) return null;
+        window.__sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        return window.__sb;
+      };
+
+      // Toast simples
+      function toast(msg, ms = 3500) {
+        const el = $("toast");
+        if (!el) { alert(msg); return; }
+        el.textContent = msg;
+        el.style.display = "block";
+        el.style.opacity = "1";
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+          el.style.opacity = "0";
+          setTimeout(() => { el.style.display = "none"; }, 250);
+        }, ms);
+      }
+
+      // Modal simples usando o modal existente da página
+      function openModal(title, bodyHtml, footerHtml) {
+        $("modalTitle").textContent = title;
+        $("modalBody").innerHTML = bodyHtml;
+        $("modalFooter").innerHTML = footerHtml || "";
+        const backdrop = $("modalBackdrop");
+        backdrop.setAttribute("aria-hidden", "false");
+        backdrop.style.display = "flex";
+      }
+      function closeModal() {
+        const backdrop = $("modalBackdrop");
+        backdrop.setAttribute("aria-hidden", "true");
+        backdrop.style.display = "none";
+      }
+
+      // Botão "Fechar" padrão do seu modal
+      const modalCloseBtn = $("modalClose");
+      if (modalCloseBtn && !modalCloseBtn.__importBound) {
+        modalCloseBtn.__importBound = true;
+        modalCloseBtn.addEventListener("click", closeModal);
+      }
+      const backdrop = $("modalBackdrop");
+      if (backdrop && !backdrop.__importBound) {
+        backdrop.__importBound = true;
+        backdrop.addEventListener("click", (e) => {
+          if (e.target === backdrop) closeModal();
+        });
+      }
+
+      function extractSpreadsheetId(url) {
+        const m = String(url || "").match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        return m ? m[1] : null;
+      }
+      function buildGvizCsvUrl(spreadsheetId, sheetName) {
+        const encodedSheet = encodeURIComponent(sheetName);
+        return `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodedSheet}`;
+      }
+
+      function normalizeRows(rows) {
+        return rows.map((r) => ({
+          codigo: r["Código"] ?? r["Codigo"] ?? "",
+          andar: r["Andar"] ?? "",
+          equipamento: r["Equipamento"] ?? "",
+          patrimonio: r["Patrimônio"] ?? r["Patrimonio"] ?? "",
+          setor: r["Setor"] ?? "",
+          responsavel: r["Responsável"] ?? r["Responsavel"] ?? "",
+          observacoes: r["Observações"] ?? r["Observacoes"] ?? "",
+          status: r["Status"] ?? ""
+        }));
+      }
+
+      async function importFromSheets({ sheetUrl, sheetTab }) {
+        const id = extractSpreadsheetId(sheetUrl);
+        if (!id) throw new Error("Não consegui identificar o ID da planilha. Cole um link padrão do Google Sheets.");
+        if (!sheetTab) throw new Error("Informe o nome da aba (sheet).");
+
+        const csvUrl = buildGvizCsvUrl(id, sheetTab);
+
+        const res = await fetch(csvUrl, { method: "GET" });
+        if (!res.ok) throw new Error(`Falha ao baixar CSV (HTTP ${res.status}). A planilha/aba está publicada e acessível?`);
+        const csvText = await res.text();
+
+        const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+        if (parsed.errors && parsed.errors.length) {
+          console.warn(parsed.errors);
+          throw new Error("Erro ao ler CSV. Verifique se a aba existe e se a planilha está publicada/acessível.");
+        }
+
+        return normalizeRows(parsed.data || []);
+      }
+
+      async function upsertInventarioByPatrimonio(rows) {
+        const sb = getSb();
+        if (!sb) throw new Error("Supabase não inicializado. Verifique o config.js e o carregamento do supabase-js.");
+
+        // Patrimônio = chave: ignorar linhas sem patrimônio
+        const valid = rows
+          .map(r => ({...r, patrimonio: String(r.patrimonio || "").trim()}))
+          .filter(r => r.patrimonio.length > 0);
+
+        if (!valid.length) throw new Error("Nenhuma linha com 'Patrimônio' preenchido foi encontrada para importar.");
+
+        // IMPORTANTE: no Supabase, a coluna 'patrimonio' deve ter UNIQUE para o upsert funcionar bem.
+        const { error } = await sb
+          .from("inventario")
+          .upsert(valid, { onConflict: "patrimonio" });
+
+        if (error) throw error;
+
+        return { total: rows.length, valid: valid.length };
+      }
+
+      function tryRefreshInventarioUI(importedRows) {
+        // tenta atualizar a tela sem quebrar seu app atual
+        if (typeof window.renderInventarioTable === "function") {
+          window.renderInventarioTable(importedRows);
+          return true;
+        }
+        if (typeof window.loadInventario === "function") {
+          window.loadInventario();
+          return true;
+        }
+        if (typeof window.refreshCurrentView === "function") {
+          window.refreshCurrentView();
+          return true;
+        }
+        return false;
+      }
+
+      const btn = $("importSheetsBtn");
+      if (btn && !btn.__importBound) {
+        btn.__importBound = true;
+        btn.addEventListener("click", () => {
+          openModal(
+            "Importar do Google Sheets",
+            `
+              <div class="note" style="margin-bottom:10px">
+                Dica: para importar sem login Google, publique a planilha (Arquivo → Publicar na web) ou garanta que ela esteja acessível.
+              </div>
+
+              <label class="note" for="gsheetUrl" style="display:block;margin:6px 0 4px">Link da planilha</label>
+              <input id="gsheetUrl" class="input" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%" />
+
+              <label class="note" for="gsheetTab" style="display:block;margin:10px 0 4px">Nome da aba (sheet)</label>
+              <input id="gsheetTab" class="input" type="text" placeholder="Ex: Inventário" style="width:100%" />
+
+              <div id="importHint" class="note" style="margin-top:10px;opacity:.9"></div>
+            `,
+            `
+              <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+                <button class="btn" id="doImportSheets">Importar</button>
+                <button class="btn" id="cancelImportSheets">Cancelar</button>
+              </div>
+            `
+          );
+
+          $("cancelImportSheets").addEventListener("click", closeModal);
+          $("doImportSheets").addEventListener("click", async () => {
+            try {
+              const sheetUrl = $("gsheetUrl").value.trim();
+              const sheetTab = $("gsheetTab").value.trim();
+              $("importHint").textContent = "Importando…";
+
+              const rows = await importFromSheets({ sheetUrl, sheetTab });
+              const { total, valid } = await upsertInventarioByPatrimonio(rows);
+
+              const refreshed = tryRefreshInventarioUI(rows);
+              $("importHint").textContent = `OK! ${valid}/${total} linhas importadas (com Patrimônio).`;
+
+              toast(`Importação concluída: ${valid}/${total} linhas salvas no Supabase.`);
+              if (!refreshed) {
+                setTimeout(() => location.reload(), 600);
+              }
+            } catch (e) {
+              console.error(e);
+              $("importHint").textContent = `Erro: ${e.message || e}`;
+              toast(`Erro ao importar: ${e.message || e}`);
+            }
+          });
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
