@@ -1,3 +1,5 @@
+/* DEPRECATED: arquivo antigo. O sistema usa app.js */
+
 const client = window.supabaseClient;
 // ===== FIX: ajusta a altura real da toolbar para o sticky do cabeçalho =====
 function updateToolbarHeightVar(){

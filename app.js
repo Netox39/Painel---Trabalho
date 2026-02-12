@@ -1,54 +1,5 @@
 const client = window.supabaseClient;
 
-// ===== UI: inputs mais escuros + gaveta TI =====
-(function injectUiTweaks(){
-  const css = `
-    .input{
-      background: rgba(0,0,0,.35) !important;
-      border-color: rgba(255,255,255,.12) !important;
-      color: rgba(255,255,255,.92) !important;
-    }
-    .input::placeholder{ color: rgba(255,255,255,.55) !important; }
-    select.input option{ background:#0b1220; color: rgba(255,255,255,.92); }
-
-    .drawerWrap{ margin-top:10px; }
-    .drawerToggle{
-      width:100%;
-      cursor:pointer;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.92);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      user-select:none;
-    }
-    .drawerBody{
-      overflow:hidden;
-      max-height:0;
-      opacity:0;
-      transform: translateY(-6px);
-      transition: max-height .35s ease, opacity .25s ease, transform .35s ease;
-      will-change: max-height, opacity, transform;
-      margin-top:10px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .drawerWrap.open .drawerBody{
-      opacity:1;
-      transform: translateY(0);
-    }
-
-  `;
-  const s = document.createElement("style");
-  s.textContent = css;
-  document.head.appendChild(s);
-})();
-
 // ===== FIX: ajusta a altura real da toolbar para o sticky do cabeçalho =====
 function updateToolbarHeightVar(){
   try{
@@ -424,7 +375,6 @@ function hookToolbar(tab){
   redraw();
   updateToolbarHeightVar();
 }
-
 
 
 function openCreate(tab){
