@@ -6,17 +6,24 @@
   <title>Painel de Trabalho — Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
 <style>
-/* Garante que o logo do topo do dashboard não herde regras genéricas */
-.logoBox img, .logo-img{
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  display: block;
-}
-.brand{
+/* --- FIX LOGO SIZE (Dashboard) --- */
+/* Força o tamanho do logo do topo mesmo que exista CSS genérico */
+.logoBox{
   display:flex;
   align-items:center;
   gap:12px;
+}
+.logoBox img{
+  width: 60px !important;
+  height: 60px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+/* Se houver algum CSS global que aplique escala */
+.logoBox img{
+  transform: none !important;
 }
 </style>
 
