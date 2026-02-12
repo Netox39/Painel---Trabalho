@@ -183,10 +183,18 @@
 
         if (!valid.length) throw new Error("Nenhuma linha com 'Patrimônio' preenchido foi encontrada para importar.");
 
+        // IMPORTANTÍSSIMO:
+        // Se o arquivo/planilha vier com o MESMO patrimônio repetido em duas linhas,
+        // o Postgres pode lançar: "ON CONFLICT DO UPDATE command cannot affect row a second time".
+        // Então fazemos um "dedupe" no lote antes do upsert, mantendo a ÚLTIMA ocorrência.
+        const byPatrimonio = new Map();
+        for (const r of valid) byPatrimonio.set(r.patrimonio, r);
+        const deduped = Array.from(byPatrimonio.values());
+
         // IMPORTANTE: no Supabase, a coluna 'patrimonio' deve ter UNIQUE para o upsert funcionar bem.
         const { error } = await sb
           .from("inventario")
-          .upsert(valid, { onConflict: "patrimonio" });
+          .upsert(deduped, { onConflict: "patrimonio" });
 
         if (error) throw error;
 
