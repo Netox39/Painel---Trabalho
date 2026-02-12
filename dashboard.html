@@ -339,7 +339,9 @@
       .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 
     mustHaveConfig();
-    const supabase = window.sbClient || (window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY));
+    const supabase =
+  window.sbClient ||
+  (window.sbClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY));
 
     const dashStatus = $("dashStatus");
     const tbody = $("tbody");
