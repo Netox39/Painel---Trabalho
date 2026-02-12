@@ -177,26 +177,26 @@ const TABS = [
 ];
 
 
-// ===== MENU CONFIG (Raíz + pastas) =====
+// ===== MENU CONFIG (Pastas raiz + subpastas) =====
 const TAB_BY_KEY = Object.fromEntries(TABS.map(t => [t.key, t]));
-const MENU_STORAGE_KEY = "menu_config_v1";
+const MENU_STORAGE_KEY = "menu_config_v2";
 
-// menu padrão: Raíz -> T.I (todas as abas atuais)
+// Estrutura:
+// { roots: [ { id, title, open, tabs:[tabKey], children:[...] }, ... ] }
 const DEFAULT_MENU = {
-  title: "Raíz",
-  open: true,
-  children: [
-    { title: "T.I", open: false, tabs: TABS.map(t=>t.key) },
-    // Exemplos (adicione/remove como quiser no editor do menu):
-    // { title: "RH", open: false, tabs: [] },
-    // { title: "Financeiro", open: false, tabs: [] },
+  roots: [
+    { id: "ti", title: "T.I", open: false, tabs: TABS.map(t=>t.key), children: [] },
   ]
 };
 
+function uid(){
+  return "f_" + Math.random().toString(36).slice(2,10);
+}
 function loadMenuConfig(){
   try{
     const raw = localStorage.getItem(MENU_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const cfg = raw ? JSON.parse(raw) : null;
+    return cfg && Array.isArray(cfg.roots) ? cfg : null;
   }catch(e){
     return null;
   }
@@ -228,7 +228,6 @@ function buildFolder(folder){
   const body = document.createElement("div");
   body.className = "drawerBody";
 
-  // Tabs dentro da pasta
   (folder.tabs || []).forEach((key)=>{
     const t = TAB_BY_KEY[key];
     if(!t) return;
@@ -239,7 +238,6 @@ function buildFolder(folder){
     body.appendChild(b);
   });
 
-  // Subpastas
   (folder.children || []).forEach((child)=>{
     body.appendChild(buildFolder(child));
   });
@@ -247,7 +245,7 @@ function buildFolder(folder){
   wrap.appendChild(toggle);
   wrap.appendChild(body);
 
-  // estado inicial recolhido/aberto
+  // estado inicial
   if(folder.open){
     wrap.classList.add("open");
     body.style.display = "flex";
@@ -294,17 +292,68 @@ function buildFolder(folder){
   return wrap;
 }
 
-function openMenuEditor(cfg){
-  const json = JSON.stringify(cfg, null, 2);
+// ===== Editor de menu (SEM CÓDIGO) =====
+function openMenuEditor(){
+  // clona config para editar sem risco
+  const cfg = JSON.parse(JSON.stringify(loadMenuConfig() || DEFAULT_MENU));
+  let selectedId = null;
+
+  function findById(id, nodes){
+    for(const n of nodes){
+      if(n.id === id) return n;
+      const hit = findById(id, n.children || []);
+      if(hit) return hit;
+    }
+    return null;
+  }
+  function findParentOf(id, nodes, parent=null){
+    for(const n of nodes){
+      if(n.id === id) return parent;
+      const hit = findParentOf(id, n.children || [], n);
+      if(hit) return hit;
+    }
+    return null;
+  }
+  function removeById(id, nodes){
+    const idx = nodes.findIndex(x=>x.id===id);
+    if(idx>=0){ nodes.splice(idx,1); return true; }
+    for(const n of nodes){
+      if(removeById(id, n.children || [])) return true;
+    }
+    return false;
+  }
 
   openModal(
-    "Editar Menu (Raíz / Pastas)",
+    "Editar menu",
     `
-      <div class="hint" style="text-align:left; margin-top:0">
-        Edite a estrutura das pastas. Em <b>tabs</b>, use as chaves das abas (ex.: <code>inventario</code>).<br/>
-        <span style="opacity:.9">Dica: copie e cole, depois clique em Salvar.</span>
+      <div class="grid two" style="gap:12px">
+        <div>
+          <div class="note" style="margin-bottom:8px">Pastas e subpastas</div>
+          <div id="tree" class="tableWrap" style="padding:10px"></div>
+          <div style="display:flex; gap:10px; margin-top:10px">
+            <button class="btn ok" id="addRoot">+ Nova pasta raiz</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="note" style="margin-bottom:8px">Configuração da pasta</div>
+          <div class="card" style="padding:12px; border-radius:16px">
+            <label class="note">Nome</label>
+            <input id="folderName" class="input" placeholder="Ex.: T.I, RH, Financeiro" />
+            <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+              <button class="btn" id="addChild">+ Subpasta</button>
+              <button class="btn danger" id="delFolder">Excluir</button>
+              <button class="btn" id="moveUp">↑</button>
+              <button class="btn" id="moveDown">↓</button>
+            </div>
+
+            <div style="margin-top:14px">
+              <div class="note" style="margin-bottom:8px">Abas dentro da pasta</div>
+              <div id="tabsBox" class="tableWrap" style="padding:10px; max-height:260px; overflow:auto"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <textarea id="menuJson" class="input" style="height:280px; margin-top:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">${escapeHtml(json)}</textarea>
     `,
     `
       <button class="btn" id="cancelMenu">Cancelar</button>
@@ -313,6 +362,132 @@ function openMenuEditor(cfg){
     `
   );
 
+  const treeEl = document.getElementById("tree");
+  const nameEl = document.getElementById("folderName");
+  const tabsBox = document.getElementById("tabsBox");
+
+  function renderTree(){
+    const renderNode = (n, depth=0)=>{
+      const pad = depth*14;
+      const active = (n.id===selectedId) ? 'style="border-color:rgba(79,209,197,.35); background:rgba(255,255,255,.06)"' : '';
+      return `
+        <div class="btn" data-id="${n.id}" ${active}
+             style="width:100%; justify-content:flex-start; gap:10px; margin:6px 0; padding-left:${12+pad}px">
+          <span style="opacity:.9">📁</span>
+          <span style="flex:1; text-align:left">${escapeHtml(n.title || "Pasta")}</span>
+          <span class="badge">${(n.tabs||[]).length}</span>
+        </div>
+        ${(n.children||[]).map(c=>renderNode(c, depth+1)).join("")}
+      `;
+    };
+    treeEl.innerHTML = (cfg.roots||[]).map(n=>renderNode(n)).join("") || `<div class="note">Nenhuma pasta criada.</div>`;
+  }
+
+  function renderTabs(folder){
+    const all = TABS.map(t=>`
+      <label style="display:flex; gap:10px; align-items:center; margin:6px 0">
+        <input type="checkbox" data-tab="${t.key}" ${folder.tabs?.includes(t.key) ? "checked" : ""} />
+        <span style="flex:1">${escapeHtml(t.name)}</span>
+        <span class="badge">${escapeHtml(t.badge)}</span>
+      </label>
+    `).join("");
+    tabsBox.innerHTML = all || `<div class="note">Nenhuma aba disponível.</div>`;
+  }
+
+  function syncRightPanel(){
+    const f = selectedId ? findById(selectedId, cfg.roots) : null;
+    if(!f){
+      nameEl.value = "";
+      nameEl.disabled = true;
+      tabsBox.innerHTML = `<div class="note">Selecione uma pasta para editar.</div>`;
+      return;
+    }
+    nameEl.disabled = false;
+    nameEl.value = f.title || "";
+    renderTabs(f);
+  }
+
+  // Seleção na árvore
+  treeEl.addEventListener("click", (e)=>{
+    const btn = e.target.closest("[data-id]");
+    if(!btn) return;
+    selectedId = btn.dataset.id;
+    renderTree();
+    syncRightPanel();
+  });
+
+  // Renomear
+  nameEl.addEventListener("input", ()=>{
+    const f = selectedId ? findById(selectedId, cfg.roots) : null;
+    if(!f) return;
+    f.title = nameEl.value;
+    renderTree();
+  });
+
+  // Seleção de tabs
+  tabsBox.addEventListener("change", (e)=>{
+    const f = selectedId ? findById(selectedId, cfg.roots) : null;
+    if(!f) return;
+    const cb = e.target.closest("input[type=checkbox][data-tab]");
+    if(!cb) return;
+    const key = cb.dataset.tab;
+    f.tabs = f.tabs || [];
+    if(cb.checked){
+      if(!f.tabs.includes(key)) f.tabs.push(key);
+    }else{
+      f.tabs = f.tabs.filter(x=>x!==key);
+    }
+    renderTree();
+  });
+
+  // Add root
+  document.getElementById("addRoot").onclick = ()=>{
+    const id = uid();
+    cfg.roots.push({ id, title: "Nova pasta", open: false, tabs: [], children: [] });
+    selectedId = id;
+    renderTree();
+    syncRightPanel();
+  };
+
+  // Add child
+  document.getElementById("addChild").onclick = ()=>{
+    const f = selectedId ? findById(selectedId, cfg.roots) : null;
+    if(!f) return toast("Selecione uma pasta.");
+    const id = uid();
+    f.children = f.children || [];
+    f.children.push({ id, title: "Subpasta", open: false, tabs: [], children: [] });
+    selectedId = id;
+    renderTree();
+    syncRightPanel();
+  };
+
+  // Delete
+  document.getElementById("delFolder").onclick = ()=>{
+    if(!selectedId) return;
+    removeById(selectedId, cfg.roots);
+    selectedId = null;
+    renderTree();
+    syncRightPanel();
+  };
+
+  // Move up/down (no mesmo nível)
+  function moveSelected(dir){
+    if(!selectedId) return;
+    const parent = findParentOf(selectedId, cfg.roots);
+    const list = parent ? (parent.children || []) : cfg.roots;
+    const idx = list.findIndex(x=>x.id===selectedId);
+    if(idx < 0) return;
+    const j = idx + dir;
+    if(j < 0 || j >= list.length) return;
+    const tmp = list[idx];
+    list[idx] = list[j];
+    list[j] = tmp;
+    renderTree();
+  }
+  document.getElementById("moveUp").onclick = ()=> moveSelected(-1);
+  document.getElementById("moveDown").onclick = ()=> moveSelected(1);
+
+  // Footer
   document.getElementById("cancelMenu").onclick = closeModal;
   document.getElementById("resetMenu").onclick = ()=>{
     localStorage.removeItem(MENU_STORAGE_KEY);
@@ -321,41 +496,39 @@ function openMenuEditor(cfg){
     toast("Menu resetado.");
   };
   document.getElementById("saveMenu").onclick = ()=>{
-    try{
-      const raw = document.getElementById("menuJson").value;
-      const next = JSON.parse(raw);
-      saveMenuConfig(next);
-      closeModal();
-      renderNav();
-      toast("Menu atualizado!");
-    }catch(e){
-      toast("JSON inválido. Revise vírgulas/aspas.");
-    }
+    saveMenuConfig(cfg);
+    closeModal();
+    renderNav();
+    toast("Menu salvo!");
   };
+
+  // inicial
+  renderTree();
+  syncRightPanel();
 }
 
-// Renderiza o menu lateral com a pasta Raíz e o botão de edição
+// Renderiza o menu lateral com pastas raiz e botão de edição
 function renderNav(){
   nav.innerHTML = "";
-
-  const cfg = loadMenuConfig() || DEFAULT_MENU;
 
   const editBtn = document.createElement("button");
   editBtn.className = "btn";
   editBtn.style.width = "100%";
   editBtn.style.marginBottom = "10px";
   editBtn.textContent = "Editar menu";
-  editBtn.onclick = ()=> openMenuEditor(cfg);
+  editBtn.onclick = ()=> openMenuEditor();
   nav.appendChild(editBtn);
 
-  nav.appendChild(buildFolder(cfg));
+  const cfg = loadMenuConfig() || DEFAULT_MENU;
+  (cfg.roots || []).forEach(folder=>{
+    nav.appendChild(buildFolder(folder));
+  });
 
   // remove seleção visual de botões (início)
   document.querySelectorAll(".nav button[data-tab-idx], .nav button[data-tab-key]").forEach(b=>{
     b.classList.remove("active");
   });
 }
-
 const nav = document.getElementById("nav");
 const panel = document.getElementById("panel");
 const titleEl = document.getElementById("title");
