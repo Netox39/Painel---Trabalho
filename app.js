@@ -585,3 +585,31 @@ renderTab(0);
     }
   }catch(e){}
 })();
+// ✅ Ao carregar o dashboard: deixa TODAS as pastas recolhidas
+function collapseAllFoldersOnLoad() {
+  // 1) remove classes comuns de "aberto"
+  document.querySelectorAll(".open, .expanded, .active").forEach(el => {
+    el.classList.remove("open", "expanded", "active");
+  });
+
+  // 2) força aria-expanded=false em toggles
+  document.querySelectorAll("[aria-expanded='true']").forEach(el => {
+    el.setAttribute("aria-expanded", "false");
+  });
+
+  // 3) esconde listas/containers de itens (submenus)
+  document.querySelectorAll(".folder-children, .children, .submenu, .subnav, ul").forEach(list => {
+    // só esconde se estiver dentro do menu lateral
+    if (list.closest("#sidebar") || list.closest(".sidebar") || list.closest("nav") || list.closest(".nav")) {
+      // evita esconder listas da tabela/conteúdo principal
+      if (!list.closest("table") && !list.closest(".content") && !list.closest("#content")) {
+        list.style.display = "none";
+      }
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Se o menu é montado depois (via JS), chame isso logo após montar o menu.
+  collapseAllFoldersOnLoad();
+});
