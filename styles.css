@@ -1,380 +1,91 @@
-:root{
-  --bg:#0b1220;
-  --panel:#0f1b33;
-  --text:#eaf0ff;
-  --muted:#93a4c7;
-  --border:rgba(255,255,255,.10);
-  --btn:#4f8cff;
-  --ok:#22c55e;
-  --danger:#ef4444;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  background: radial-gradient(1200px 600px at 20% -10%, rgba(79,140,255,.22), transparent 60%),
-              radial-gradient(900px 500px at 90% 10%, rgba(34,197,94,.16), transparent 55%),
-              var(--bg);
-  color:var(--text);
-}
-a{color:inherit}
-.container{max-width:1180px;margin:0 auto;padding:18px}
-.card{
-  background: linear-gradient(180deg, rgba(15,27,51,.92), rgba(15,27,51,.68));
-  border:1px solid var(--border);
-  border-radius:16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.25);
-}
-.header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;border-bottom:1px solid var(--border);
-  position:sticky;top:0;backdrop-filter: blur(10px);
-  z-index:10;
-}
-.brand{display:flex;align-items:center;gap:10px}
-.brand img{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.05);object-fit:cover}
-.brand small{display:block;color:var(--muted);margin-top:2px}
-.clock{color:var(--muted);font-size:12px}
-.btn{
-  border:none;border-radius:12px;padding:10px 12px;
-  background:rgba(255,255,255,.10);color:var(--text);
-  cursor:pointer;font-weight:800;
-}
-.btn:hover{background:rgba(79,140,255,.22)}
-.btn.primary{background:var(--btn)}
-.btn.primary:hover{filter:brightness(1.05)}
-.btn.ok{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.35)}
-.btn.ok:hover{background:rgba(34,197,94,.26)}
-.btn.danger{background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.35)}
-.btn.danger:hover{background:rgba(239,68,68,.24)}
-.input, select{
-  width:100%;
-  padding:10px 12px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  color: var(--text);
-  outline: none;
-}
-.input::placeholder{color: rgba(234,240,255,.55)}
-.grid{display:grid;gap:12px}
-.grid.two{grid-template-columns:1fr 1fr}
-@media (max-width:860px){ .grid.two{grid-template-columns:1fr} }
-
-.shell{height:calc(100vh - 0px);display:grid;grid-template-columns:320px 1fr}
-.sidebar{
-  border-right:1px solid var(--border);
-  background: linear-gradient(180deg, rgba(15,27,51,.72), rgba(15,27,51,.45));
-  overflow:auto;
-}
-.nav{padding:12px}
-.nav button{
-  width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;
-  padding:10px;border-radius:12px;
-  border:1px solid var(--border);background:rgba(255,255,255,.04);
-  color:var(--text);cursor:pointer;margin-bottom:8px;
-  transition:.12s ease;
-}
-.nav button:hover{transform:translateY(-1px);border-color: rgba(79,140,255,.35)}
-.nav button.active{background:rgba(79,140,255,.18);border-color:rgba(79,140,255,.45)}
-.badge{font-size:11px;color:var(--muted);padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:rgba(0,0,0,.12)}
-.main{overflow:hidden}
-.contentWrap{padding:12px}
-.panel{
-  height: calc(100vh - 72px - 24px);
-  border:1px solid var(--border);
-  border-radius:16px;
-  background: rgba(0,0,0,.10);
-  overflow:auto;
-}
-/* Toolbar sticky */
-.toolbar{
-  position:sticky;top:0;z-index:10;
-  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-  padding:10px;border-bottom:1px solid var(--border);
-  background: rgba(15,27,51,.95);
-}
-.kpi{color:var(--muted);font-size:12px;margin-left:auto}
-.tableWrap{padding:10px}
-table{
-  width:max-content;border-collapse:separate;border-spacing:0;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:14px;overflow:hidden;background:rgba(255,255,255,.02);
-}
-th,td{
-  border-bottom:1px solid rgba(255,255,255,.08);
-  border-right:1px solid rgba(255,255,255,.08);
-  padding:8px 10px;font-size:13px;white-space:nowrap;
-}
-
-tr:hover td{background:rgba(255,255,255,.04)}
-
-.modalBackdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.55);
-  display:none;align-items:center;justify-content:center;padding:18px;z-index:50;
-}
-.modalBackdrop.open{display:flex}
-.modal{
-  width:min(780px, 100%);
-  border:1px solid var(--border);
-  border-radius:18px;
-  background: linear-gradient(180deg, rgba(15,27,51,.98), rgba(15,27,51,.80));
-  box-shadow: 0 18px 70px rgba(0,0,0,.55);
-}
-.modalHeader{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modalBody{padding:14px}
-.modalFooter{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
-.note{color:var(--muted);font-size:12px;line-height:1.4}
-.toast{
-  position:fixed;right:14px;bottom:14px;
-  background: rgba(15,27,51,.95);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:10px 12px;
-  max-width:360px;
-  display:none;
-}
-.toast.show{display:block}
-
-/* ===== CABEÇALHO DA TABELA: FIXO E ALINHADO =====
-   Ajuste fino: sobe um pouco o cabeçalho para colar melhor na toolbar.
-   Se quiser mais/menos, altere o -8px.
+/* === Painel v2.0 (PATCH SEGURO) ===
+   Este arquivo NÃO substitui o styles.css — apenas melhora o visual
+   sem mexer na estrutura/layout base.
 */
 :root{
-  --toolbar-h: 56px; /* fallback; o app.js atualiza dinamicamente */
+  --v2-bg-1: rgba(255,255,255,.06);
+  --v2-bg-2: rgba(255,255,255,.09);
+  --v2-bd-1: rgba(255,255,255,.10);
+  --v2-bd-2: rgba(255,255,255,.16);
+  --v2-shadow: 0 14px 40px rgba(0,0,0,.35);
+  --v2-focus: 0 0 0 4px rgba(79, 209, 197, .18);
 }
 
-th{
-  position: sticky;
-  top: calc(var(--toolbar-h) - 210px);
-  z-index: 9;
-  background: rgba(79,140,255,.14);
-  backdrop-filter: blur(6px);
-  font-weight: 900;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 25px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.logo-box {
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.badge img{
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-}
-
-
-/* ===== Logo do LOGIN (somente na tela inicial) ===== */
-.wrap .badge img{
-  width:56px;
-  height:56px;
-  object-fit:contain;
-}
-}
-
-.brand-text .title {
-  font-size: 18px;
-}
-
-.brand-text .subtitle {
-  font-size: 14px;
-  opacity: 0.8;
-}
-/* ===== Header mais institucional ===== */
+/* Header/brand */
 .header{
-  background: linear-gradient(180deg, rgba(6,20,50,.95), rgba(6,20,50,.70));
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  padding: 14px 18px;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--v2-shadow);
 }
 
-/* Marca (logo + textos) */
-.brand{
-  display:flex;
-  align-items:center;
-  gap:14px;
+/* Logo: trava tamanho (sem estourar) */
+.logoBox img, .logo-img, img.dash-logo{
+  width: 32px !important;
+  height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  object-fit: contain !important;
+  transform: none !important;
 }
 
-/* Quadrado branco da logo */
-.logoBox{
-  width:64px;
-  height:64px;
-  background:#fff;
-  border-radius:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow: 0 10px 28px rgba(0,0,0,.25);
- 
-::contentReference[oaicite:0]{index=0}
-
-  /* ===== TEMA INSTITUCIONAL FACULDADE ===== */
-
-/* Header mais elegante */
-.header{
-  background: linear-gradient(135deg, #0a1f44 0%, #102a63 60%, #163c8a 100%);
-  box-shadow: 0 6px 24px rgba(0,0,0,.35);
+/* Sidebar / cards: mais “SaaS” */
+.sidebar, .card, .panel, .contentWrap{
+  box-shadow: var(--v2-shadow);
+  border-color: var(--v2-bd-1) !important;
 }
 
-/* Logo institucional */
-.logoBox{
-  width:64px;
-  height:64px;
-  background:#ffffff;
-  border-radius:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
-  padding:8px;
+/* Botões: hover e foco mais bonitos */
+.btn, button, .drawerToggle{
+  transition: background .15s ease, border-color .15s ease, transform .08s ease, box-shadow .15s ease;
+}
+.btn:hover, button:hover, .drawerToggle:hover{
+  border-color: var(--v2-bd-2) !important;
+  background: var(--v2-bg-2) !important;
+}
+.btn:active, button:active{
+  transform: translateY(1px);
+}
+.btn:focus, button:focus, .drawerToggle:focus, input:focus, select:focus{
+  outline: none !important;
+  box-shadow: var(--v2-focus) !important;
 }
 
-.logoBox img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
+/* Inputs mais “premium” */
+.input, input, select, textarea{
+  border-color: var(--v2-bd-1) !important;
+  background: rgba(0,0,0,.32) !important;
+}
+.input::placeholder, input::placeholder{
+  color: rgba(255,255,255,.55) !important;
 }
 
-/* Texto institucional */
-.brandText .appTitle{
-  font-size:18px;
-  font-weight:900;
-  letter-spacing:.3px;
-}
-
-.brandText .appSub{
-  font-size:13px;
-  opacity:.85;
-}
-
-/* Sidebar mais institucional */
-.sidebar{
-  background: linear-gradient(180deg, #0d1f3c 0%, #0a162c 100%);
-  border-right:1px solid rgba(255,255,255,.06);
-}
-
-/* Botões da lateral */
+/* Nav items */
 .nav button{
-  background: rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.08);
-  font-weight:600;
+  border-color: var(--v2-bd-1) !important;
 }
-
+.nav button:hover{
+  border-color: var(--v2-bd-2) !important;
+}
 .nav button.active{
-  background: linear-gradient(90deg, rgba(79,140,255,.25), rgba(79,140,255,.15));
-  border-color: rgba(79,140,255,.45);
+  border-color: rgba(79,209,197,.35) !important;
+  background: linear-gradient(135deg, rgba(79,209,197,.18), rgba(101,211,140,.10)) !important;
 }
 
-/* Área principal mais clara para contraste */
-.panel{
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+/* Tabela: cabeçalho mais sólido */
+thead th{
+  background: rgba(14, 26, 51, .92) !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+tbody tr:hover td{
+  background: rgba(255,255,255,.04) !important;
 }
 
-/* Tabela mais institucional */
-table{
-  background: rgba(255,255,255,.04);
-  border-radius:18px;
+/* Modal */
+.modal{
+  border-color: var(--v2-bd-1) !important;
+  box-shadow: var(--v2-shadow) !important;
 }
 
-th{
-  background: linear-gradient(90deg, rgba(79,140,255,.25), rgba(79,140,255,.15));
-  font-size:13px;
-}
-
-/* Chips de status mais elegantes */
-.status-chip{
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:600;
-}
-
-.status-aberto{background:#1f6feb33;color:#7db3ff}
-.status-andamento{background:#facc1533;color:#ffd666}
-.status-concluido{background:#22c55e33;color:#8cffb5}
-.status-pendente{background:#ef444433;color:#ff9a9a}
-  
-  /* ===== Logo do topo (evita herdar CSS genérico) ===== */
-.header .brand .logoBox img{
-  width:44px !important;
-  height:44px !important;
-  max-width:44px !important;
-  max-height:44px !important;
-  object-fit:contain !important;
-  transform:none !important;
-}
-
-/* ===== Gaveta T.I (menu) ===== */
-.drawerWrap{ margin-top:10px; }
-.drawerToggle{
-  width:100%;
-  cursor:pointer;
-  padding:10px 12px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.06);
-  color: rgba(255,255,255,.92);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  user-select:none;
-}
-.drawerBody{
-  overflow:hidden;
-  max-height:0;
-  opacity:0;
-  transform: translateY(-6px);
-  transition: max-height .35s ease, opacity .25s ease, transform .35s ease;
-  will-change: max-height, opacity, transform;
-  margin-top:10px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.drawerWrap.open .drawerBody{
-  opacity:1;
-  transform: translateY(0);
-}
-
-/* Inputs mais escuros (tabela/filtros) */
-.input{
-  background: rgba(0,0,0,.35) !important;
-  border-color: rgba(255,255,255,.12) !important;
-  color: rgba(255,255,255,.92) !important;
-}
-.input::placeholder{ color: rgba(255,255,255,.55) !important; }
-select.input option{ background:#0b1220; color: rgba(255,255,255,.92); }
-
-
-/* ===== Logo do DASHBOARD (sempre pequeno) ===== */
-.logoBox img{
-  width:60px !important;
-  height:60px !important;
-  max-width:60px !important;
-  max-height:60px !important;
-  object-fit:contain !important;
-  transform:none !important;
-  display:block !important;
+/* Preferência do sistema: reduzir movimento */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important;}
 }
