@@ -42,8 +42,7 @@
             <button class="btn" id="zoomOut" title="Diminuir zoom">−</button>
             <button class="btn" id="zoomReset" title="Resetar zoom">100%</button>
             <button class="btn" id="zoomIn" title="Aumentar zoom">+</button>
-            <button class="btn" id="importSheetsBtn" title="Importar do Google Sheets">Importar</button>
-            <button class="btn ok" id="addBtn">+ Adicionar</button>
+                        <button class="btn ok" id="addBtn">+ Adicionar</button>
           </div>
         </div>
 
@@ -65,9 +64,12 @@
 
   <div class="toast" id="toast"></div>
 
+  <input type="file" id="xlsxFileInput" accept=".xlsx,.xls" style="display:none" />
+
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="site.js"></script>
   <script src="app.js"></script>
   <script>
@@ -208,58 +210,155 @@
         return false;
       }
 
-      const btn = $("importSheetsBtn");
-      if (btn && !btn.__importBound) {
-        btn.__importBound = true;
-        btn.addEventListener("click", () => {
-          openModal(
-            "Importar do Google Sheets",
-            `
-              <div class="note" style="margin-bottom:10px">
-                Dica: para importar sem login Google, publique a planilha (Arquivo → Publicar na web) ou garanta que ela esteja acessível.
-              </div>
 
-              <label class="note" for="gsheetUrl" style="display:block;margin:6px 0 4px">Link da planilha</label>
-              <input id="gsheetUrl" class="input" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%" />
+      // ===== Importação: XLSX local + Google Sheets =====
+      const fileInput = $("xlsxFileInput");
 
-              <label class="note" for="gsheetTab" style="display:block;margin:10px 0 4px">Nome da aba (sheet)</label>
-              <input id="gsheetTab" class="input" type="text" placeholder="Ex: Inventário" style="width:100%" />
+      async function importFromXlsxFile(file) {
+        if (!window.XLSX) throw new Error("Biblioteca XLSX não carregou.");
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const firstSheetName = wb.SheetNames && wb.SheetNames[0];
+        if (!firstSheetName) throw new Error("Arquivo XLSX sem abas.");
+        const ws = wb.Sheets[firstSheetName];
+        const data = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+        return normalizeRows(data || []);
+      }
 
-              <div id="importHint" class="note" style="margin-top:10px;opacity:.9"></div>
-            `,
-            `
-              <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-                <button class="btn" id="doImportSheets">Importar</button>
-                <button class="btn" id="cancelImportSheets">Cancelar</button>
-              </div>
-            `
-          );
+      function openSheetsModal() {
+        openModal(
+          "Importar do Google Sheets",
+          `
+            <div class="note" style="margin-bottom:10px">
+              Dica: para importar sem login Google, publique a planilha (Arquivo → Publicar na web) ou garanta que ela esteja acessível.
+            </div>
 
-          $("cancelImportSheets").addEventListener("click", closeModal);
-          $("doImportSheets").addEventListener("click", async () => {
-            try {
-              const sheetUrl = $("gsheetUrl").value.trim();
-              const sheetTab = $("gsheetTab").value.trim();
-              $("importHint").textContent = "Importando…";
+            <label class="note" for="gsheetUrl" style="display:block;margin:6px 0 4px">Link da planilha</label>
+            <input id="gsheetUrl" class="input" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%" />
 
-              const rows = await importFromSheets({ sheetUrl, sheetTab });
-              const { total, valid } = await upsertInventarioByPatrimonio(rows);
+            <label class="note" for="gsheetTab" style="display:block;margin:10px 0 4px">Nome da aba (sheet)</label>
+            <input id="gsheetTab" class="input" type="text" placeholder="Ex: Inventário" style="width:100%" />
 
-              const refreshed = tryRefreshInventarioUI(rows);
-              $("importHint").textContent = `OK! ${valid}/${total} linhas importadas (com Patrimônio).`;
+            <div id="importHint" class="note" style="margin-top:10px;opacity:.9"></div>
+          `,
+          `
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+              <button class="btn" id="doImportSheets">Importar</button>
+              <button class="btn" id="cancelImportSheets">Cancelar</button>
+            </div>
+          `
+        );
 
-              toast(`Importação concluída: ${valid}/${total} linhas salvas no Supabase.`);
-              if (!refreshed) {
-                setTimeout(() => location.reload(), 600);
-              }
-            } catch (e) {
-              console.error(e);
-              $("importHint").textContent = `Erro: ${e.message || e}`;
-              toast(`Erro ao importar: ${e.message || e}`);
-            }
-          });
+        $("cancelImportSheets").addEventListener("click", closeModal);
+        $("doImportSheets").addEventListener("click", async () => {
+          try {
+            const sheetUrl = $("gsheetUrl").value.trim();
+            const sheetTab = $("gsheetTab").value.trim();
+            $("importHint").textContent = "Importando…";
+
+            const rows = await importFromSheets({ sheetUrl, sheetTab });
+            const { total, valid } = await upsertInventarioByPatrimonio(rows);
+
+            const refreshed = tryRefreshInventarioUI(rows);
+            $("importHint").textContent = `OK! ${valid}/${total} linhas importadas (com Patrimônio).`;
+
+            toast(`Importação concluída: ${valid}/${total} linhas salvas no Supabase.`);
+            if (!refreshed) setTimeout(() => location.reload(), 600);
+          } catch (e) {
+            console.error(e);
+            $("importHint").textContent = `Erro: ${e.message || e}`;
+            toast(`Erro ao importar: ${e.message || e}`);
+          }
         });
       }
+
+      function openImportChooser() {
+        openModal(
+          "Importar inventário",
+          `
+            <div class="note" style="margin-bottom:10px">
+              Escolha como você quer importar.
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn ok" id="chooseXlsx">Importar XLSX (arquivo)</button>
+              <button class="btn" id="chooseSheets">Importar Google Sheets</button>
+            </div>
+            <div id="importHint" class="note" style="margin-top:10px;opacity:.9"></div>
+          `,
+          `
+            <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+              <button class="btn" id="cancelImport">Fechar</button>
+            </div>
+          `
+        );
+
+        $("cancelImport").addEventListener("click", closeModal);
+
+        $("chooseXlsx").addEventListener("click", () => {
+          if (!fileInput) return toast("Input de arquivo não encontrado.");
+          fileInput.value = "";
+          fileInput.click();
+        });
+
+        $("chooseSheets").addEventListener("click", () => {
+          openSheetsModal();
+        });
+      }
+
+      // Handler do XLSX (após escolher arquivo)
+      if (fileInput && !fileInput.__importBound) {
+        fileInput.__importBound = true;
+        fileInput.addEventListener("change", async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+          try {
+            const hint = $("importHint");
+            if (hint) hint.textContent = "Lendo XLSX…";
+            const rows = await importFromXlsxFile(file);
+            const { total, valid } = await upsertInventarioByPatrimonio(rows);
+
+            const refreshed = tryRefreshInventarioUI(rows);
+            if (hint) hint.textContent = `OK! ${valid}/${total} linhas importadas (com Patrimônio).`;
+
+            toast(`Importação XLSX concluída: ${valid}/${total} linhas salvas no Supabase.`);
+            if (!refreshed) setTimeout(() => location.reload(), 600);
+          } catch (e) {
+            console.error(e);
+            const hint = $("importHint");
+            if (hint) hint.textContent = `Erro: ${e.message || e}`;
+            toast(`Erro ao importar XLSX: ${e.message || e}`);
+          }
+        });
+      }
+
+      // Colocar botão Importar ao lado do "Exportar CSV"
+      function ensureImportButtonNextToExport() {
+        const buttons = Array.from(document.querySelectorAll("button"));
+        const exportBtn = buttons.find(b => (b.textContent || "").trim().toLowerCase() === "exportar csv");
+        if (!exportBtn) return false;
+
+        // evita duplicar
+        const parent = exportBtn.parentElement;
+        if (!parent) return false;
+        if (parent.querySelector('button[data-import="xlsx"]')) return true;
+
+        const importBtn = document.createElement("button");
+        importBtn.className = exportBtn.className || "btn";
+        importBtn.textContent = "Importar";
+        importBtn.title = "Importar XLSX / Google Sheets";
+        importBtn.dataset.import = "xlsx";
+        importBtn.addEventListener("click", openImportChooser);
+
+        exportBtn.insertAdjacentElement("afterend", importBtn);
+        return true;
+      }
+
+      // Tenta agora e observa mudanças (caso a tela seja renderizada depois)
+      ensureImportButtonNextToExport();
+      const mo = new MutationObserver(() => ensureImportButtonNextToExport());
+      mo.observe(document.body, { childList: true, subtree: true });
+
+
     })();
   </script>
 
