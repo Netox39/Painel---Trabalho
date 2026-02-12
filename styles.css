@@ -181,8 +181,10 @@ th{
 
 .logo-img {
   width: auto;
-  height: 120px;
+  height: 15vh;   /* escala proporcional à tela */
   object-fit: contain;
+}
+
 }
 
 .brand-text .title {
