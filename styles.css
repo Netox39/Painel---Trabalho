@@ -179,9 +179,9 @@ th{
   justify-content: center;
 }
 
-.logo-img {
-  width: auto;
-  height: 15vh;   /* escala proporcional à tela */
+.badge img{
+  width: 120px;
+  height: 120px;
   object-fit: contain;
 }
 
