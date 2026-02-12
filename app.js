@@ -1,5 +1,54 @@
 const client = window.supabaseClient;
 
+// ===== UI: inputs mais escuros + gaveta TI =====
+(function injectUiTweaks(){
+  const css = `
+    .input{
+      background: rgba(0,0,0,.35) !important;
+      border-color: rgba(255,255,255,.12) !important;
+      color: rgba(255,255,255,.92) !important;
+    }
+    .input::placeholder{ color: rgba(255,255,255,.55) !important; }
+    select.input option{ background:#0b1220; color: rgba(255,255,255,.92); }
+
+    .drawerWrap{ margin-top:10px; }
+    .drawerToggle{
+      width:100%;
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+    }
+    .drawerBody{
+      overflow:hidden;
+      max-height:0;
+      opacity:0;
+      transform: translateY(-6px);
+      transition: max-height .35s ease, opacity .25s ease, transform .35s ease;
+      will-change: max-height, opacity, transform;
+      margin-top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .drawerWrap.open .drawerBody{
+      opacity:1;
+      transform: translateY(0);
+    }
+
+  `;
+  const s = document.createElement("style");
+  s.textContent = css;
+  document.head.appendChild(s);
+})();
+
 // ===== FIX: ajusta a altura real da toolbar para o sticky do cabeçalho =====
 function updateToolbarHeightVar(){
   try{
@@ -377,6 +426,7 @@ function hookToolbar(tab){
 }
 
 
+
 function openCreate(tab){
   const cols = tab.columns;
   const body = `
@@ -460,23 +510,6 @@ async function refresh(){
   hookToolbar(current);
 }
 
-
-function showEmptyState(){
-  current = null;
-  // limpa estado visual do nav
-  document.querySelectorAll(".nav button[data-tab-idx]").forEach((b)=> b.classList.remove("active"));
-  // título/subtítulo padrão
-  titleEl.textContent = "Painel de Trabalho";
-  subtitleEl.textContent = "Selecione uma opção no menu T.I para visualizar os dados.";
-  // conteúdo inicial (sem tabela)
-  panel.innerHTML = `
-    <div style="padding:40px 22px; text-align:center; opacity:.7">
-      <div style="font-size:18px; font-weight:800; margin-bottom:6px">Bem-vindo</div>
-      <div style="font-size:14px">Clique em uma aba no menu <b>T.I</b> para carregar a tabela.</div>
-    </div>
-  `;
-}
-
 function renderTab(i){
   current = TABS[i];
   titleEl.textContent = current.name;
@@ -500,14 +533,12 @@ const mkNavBtn = (t,i)=>{
 };
 
 const drawerWrap = document.createElement("div");
-drawerWrap.className = "drawerWrap";
+drawerWrap.className = "drawerWrap open";
 
 const toggle = document.createElement("button");
 toggle.className = "drawerToggle";
-  toggle.setAttribute("aria-expanded","false");
 toggle.type = "button";
 toggle.innerHTML = `<span>T.I</span><span class="badge">Menu</span>`;
-toggle.setAttribute("aria-expanded","false");
 
 const body = document.createElement("div");
 body.className = "drawerBody";
@@ -519,73 +550,27 @@ drawerWrap.appendChild(toggle);
 drawerWrap.appendChild(body);
 nav.appendChild(drawerWrap);
 
-
 const setDrawerHeight = ()=>{
-  // mantém a animação suave e calcula a altura real do conteúdo
   if(drawerWrap.classList.contains("open")){
-    // precisa estar visível para scrollHeight funcionar
-    body.style.display = "flex";
-    // espera um frame pra layout recalcular (fonts/badges)
-    requestAnimationFrame(()=>{
-      body.style.maxHeight = body.scrollHeight + "px";
-    });
+    body.style.maxHeight = body.scrollHeight + "px";
   }else{
     body.style.maxHeight = "0px";
   }
 };
 
-function openDrawer(){
-  if(drawerWrap.classList.contains("open")) return;
-  drawerWrap.classList.add("open");
-  toggle.setAttribute("aria-expanded","true");
-  body.style.display = "flex";
-  // anima: de 0 -> altura real
-  requestAnimationFrame(()=>{
-    body.style.maxHeight = body.scrollHeight + "px";
-  });
-}
-
-function closeDrawer(){
-  if(!drawerWrap.classList.contains("open")) return;
-  drawerWrap.classList.remove("open");
-  toggle.setAttribute("aria-expanded","false");
-  // anima: altura -> 0, e depois remove do fluxo
-  body.style.maxHeight = body.scrollHeight + "px";
-  requestAnimationFrame(()=>{ body.style.maxHeight = "0px"; });
-}
-
-// inicia recolhida por padrão (T.I fechada)
-body.style.display = "none";
-body.style.maxHeight = "0px";
+// abre por padrão com animação suave
+requestAnimationFrame(()=>{ setDrawerHeight(); });
 
 toggle.onclick = ()=>{
-  if(drawerWrap.classList.contains("open")){
-    closeDrawer();
-  }else{
-    openDrawer();
-  }
+  drawerWrap.classList.toggle("open");
+  setDrawerHeight();
 };
 
-// após o fechamento terminar, esconde de verdade (evita "vazar" conteúdo)
-body.addEventListener("transitionend", (e)=>{
-  if(e.propertyName !== "max-height") return;
-  if(!drawerWrap.classList.contains("open")){
-    body.style.display = "none";
-  }else{
-    // permite crescer se o conteúdo mudar
-    body.style.display = "flex";
-    body.style.maxHeight = body.scrollHeight + "px";
-  }
-});
-
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
-window.addEventListener("resize", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
-window.addEventListener("load", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
+window.addEventListener("resize", setDrawerHeight);
 
-// garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
-window.addEventListener("resize", ()=>{ if(drawerWrap.classList.contains("open")) setDrawerHeight(); });
-  // NÃO carrega nenhuma aba automaticamente: o usuário escolhe no menu
-  showEmptyState();
+// carrega a primeira aba automaticamente
+renderTab(0);
 
   // realtime (best-effort)
   try{
