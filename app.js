@@ -533,7 +533,7 @@ const mkNavBtn = (t,i)=>{
 };
 
 const drawerWrap = document.createElement("div");
-drawerWrap.className = "drawerWrap open";
+drawerWrap.className = "drawerWrap";
 
 const toggle = document.createElement("button");
 toggle.className = "drawerToggle";
@@ -558,19 +558,43 @@ body.style.display = "none";
 body.style.maxHeight = "0px";
 const setDrawerHeight = ()=>{
   if(drawerWrap.classList.contains("open")){
-    body.style.maxHeight = body.scrollHeight + "px";
+    // precisa estar visível para medir altura corretamente
+    body.style.display = "flex";
+    // mede no próximo frame para pegar scrollHeight correto
+    requestAnimationFrame(()=>{
+      body.style.maxHeight = body.scrollHeight + "px";
+    });
   }else{
     body.style.maxHeight = "0px";
   }
 };
 
-// abre por padrão com animação suave
-requestAnimationFrame(()=>{ setDrawerHeight(); });
+// inicia recolhida (sem abrir automaticamente)
+setDrawerHeight();
 
 toggle.onclick = ()=>{
-  drawerWrap.classList.toggle("open");
-  setDrawerHeight();
+  const willOpen = !drawerWrap.classList.contains("open");
+  if(willOpen){
+    drawerWrap.classList.add("open");
+    toggle.setAttribute("aria-expanded","true");
+    setDrawerHeight();
+  }else{
+    drawerWrap.classList.remove("open");
+    toggle.setAttribute("aria-expanded","false");
+    setDrawerHeight();
+  }
 };
+
+// após fechar a animação, esconde o conteúdo (evita "vazar" clique/scroll)
+body.addEventListener("transitionend", (e)=>{
+  if(e.propertyName !== "max-height") return;
+  if(!drawerWrap.classList.contains("open")){
+    body.style.display = "none";
+  }else{
+    // mantém altura correta se algo mudar
+    body.style.maxHeight = body.scrollHeight + "px";
+  }
+});
 
 // garante que se o conteúdo mudar (ex.: badges/font), a altura fique correta
 window.addEventListener("resize", setDrawerHeight);
